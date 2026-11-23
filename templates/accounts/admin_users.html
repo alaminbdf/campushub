@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Admin & Audit{% endblock %}
+{% block content %}
+<h3 class="mb-3">Account, RBAC Role Governance & Append-Only Audit Log</h3>
+
+<div class="card shadow-sm p-3 mb-4">
+  <h5 class="mb-3">Manage Operational Accounts (FR-ADM-01 / FR-ADM-02)</h5>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Institutional ID</th>
+          <th>Username</th>
+          <th>Current Role</th>
+          <th>Active</th>
+          <th>Update Role / Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td class="fw-semibold">{{ u.institutional_id }}</td>
+          <td><code>{{ u.username }}</code></td>
+          <td><span class="badge bg-secondary">{{ u.get_role_display }}</span></td>
+          <td>{% if u.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Disabled</span>{% endif %}</td>
+          <td>
+            <form method="post" class="d-flex gap-2 align-items-center">
+              {% csrf_token %}
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <select name="role" class="form-select form-select-sm" style="max-width: 210px;">
+                {% for code, label in roles %}
+                <option value="{{ code }}" {% if u.role == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-check m-0">
+                <input class="form-check-input" type="checkbox" name="is_active" {% if u.is_active %}checked{% endif %}>
+              </div>
+              <input name="reason" type="text" class="form-control form-control-sm" placeholder="Audit reason" style="max-width: 170px;">
+              <button type="submit" class="btn btn-sm btn-primary">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card shadow-sm p-3">
+  <h5 class="mb-2">Immutable Audit Trail (FR-ADM-04 / NFR-SEC-03)</h5>
+  <p class="text-muted small">Records are append-only and protected from modification or deletion.</p>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover small">
+      <thead>
+        <tr><th>Timestamp</th><th>Actor</th><th>Module</th><th>Action</th><th>Target</th><th>Reason</th></tr>
+      </thead>
+      <tbody>
+        {% for ev in audit_events %}
+        <tr>
+          <td>{{ ev.created_at|date:"Y-m-d H:i:s" }}</td>
+          <td>{{ ev.actor.institutional_id|default:"SYSTEM" }}</td>
+          <td><span class="badge bg-light text-dark border">{{ ev.module }}</span></td>
+          <td class="fw-semibold">{{ ev.action }}</td>
+          <td><code>{{ ev.target_type }}:{{ ev.target_id|slice:":8" }}</code></td>
+          <td>{{ ev.reason|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-muted">No audit events recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

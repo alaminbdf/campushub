@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Welcome, {{ user.first_name|default:user.username }}</h3>
+    <span class="text-muted small">Role-Scoped Dashboard — {{ user.get_role_display }} ({{ user.institutional_id }})</span>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for label, value in stats.items %}
+  <div class="col-md-3 col-sm-6">
+    <div class="card shadow-sm p-3 h-100">
+      <div class="text-muted small">{{ label }}</div>
+      <div class="fs-2 fw-bold text-primary">{{ value }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm p-3 h-100">
+      <h5 class="mb-2">Quick Module Access</h5>
+      <div class="list-group list-group-flush">
+        {% if user.role in 'STUDENT,LIBRARY_STAFF,LIBRARY_SUPERVISOR,MANAGEMENT_OFFICER,SYSTEM_ADMIN' %}
+        <a href="{% url 'library:index' %}" class="list-group-item list-group-item-action">
+          <strong>Library Seat Allocation & Group Booking</strong>
+          <div class="small text-muted">Individual/group reservations, attendee consent, check-in & no-show release.</div>
+        </a>
+        {% endif %}
+        {% if user.role in 'STUDENT,LF_REVIEWER,SECURITY_OFFICER,MANAGEMENT_OFFICER' %}
+        <a href="{% url 'lost_found:index' %}" class="list-group-item list-group-item-action">
+          <strong>Lost & Found Verification</strong>
+          <div class="small text-muted">Reports, unverified match leads, ownership claims, security escalation & handover.</div>
+        </a>
+        {% endif %}
+        {% if user.role in 'STUDENT,UTILITY_STAFF,IT_STAFF,MANAGEMENT_OFFICER,SYSTEM_ADMIN' %}
+        <a href="{% url 'facilities:index' %}" class="list-group-item list-group-item-action">
+          <strong>Facility & Equipment Tickets</strong>
+          <div class="small text-muted">Issue reporting, assignment, progress notes, resolution & full status history.</div>
+        </a>
+        {% endif %}
+        {% if user.role in 'STUDENT,LIBRARY_STAFF,LIBRARY_SUPERVISOR,MANAGEMENT_OFFICER,IT_STAFF,SYSTEM_ADMIN' %}
+        <a href="{% url 'forecasting:index' %}" class="list-group-item list-group-item-action">
+          <strong>ML Library Demand Forecasting</strong>
+          <div class="small text-muted">Time-aware predicted occupancy separated from live availability.</div>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm p-3 h-100">
+      <h5 class="mb-2">Latest ML Forecast Status</h5>
+      {% if latest_forecast %}
+        <p class="mb-1 small"><strong>Model:</strong> <code>{{ latest_forecast.model_version }}</code></p>
+        <p class="mb-1 small"><strong>Evaluation (Time-Aware Holdout):</strong> Model MAE <strong>{{ latest_forecast.model_mae }}</strong> vs. Naive Baseline MAE <strong>{{ latest_forecast.baseline_mae }}</strong> (RMSE: {{ latest_forecast.model_rmse }})</p>
+        <p class="mb-2 small"><strong>Generated:</strong> {{ latest_forecast.generated_at|date:"Y-m-d H:i" }}</p>
+        <div class="alert alert-warning py-2 small mb-0">{{ latest_forecast.caveat_notice }}</div>
+      {% else %}
+        <p class="text-muted small">No forecast generated yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if recent_audit %}
+<div class="card shadow-sm p-3 mt-4">
+  <h5 class="mb-2">Recent System Audit Events</h5>
+  <div class="table-responsive">
+    <table class="table table-sm small mb-0">
+      <thead><tr><th>Time</th><th>Actor</th><th>Module</th><th>Action</th><th>Reason</th></tr></thead>
+      <tbody>
+        {% for ev in recent_audit %}
+        <tr>
+          <td>{{ ev.created_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ ev.actor.institutional_id|default:"SYSTEM" }}</td>
+          <td>{{ ev.module }}</td>
+          <td><code>{{ ev.action }}</code></td>
+          <td>{{ ev.reason|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Sign In{% endblock %}
+{% block content %}
+<div class="row justify-content-center g-4 mt-2">
+  <div class="col-md-5">
+    <div class="card shadow-sm p-4">
+      <h4 class="mb-1">Sign In to CampusHub</h4>
+      <p class="text-muted small mb-3">Server-side Role-Based Access Control (9 SRS Operational Roles)</p>
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label" for="username">Username</label>
+          <input id="username" name="username" type="text" class="form-control" required autofocus placeholder="e.g., student1">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="password">Password</label>
+          <input id="password" name="password" type="password" class="form-control" required placeholder="CampusHub@2026">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <div class="card shadow-sm p-4">
+      <h6 class="fw-bold mb-2">Prototype Demo Accounts (Password: <code>CampusHub@2026</code>)</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle mb-0 small">
+          <thead>
+            <tr><th>Username</th><th>ID</th><th>Operational Role</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>student1</code> / <code>student2</code> / <code>student3</code></td><td>STU-2026-001..003</td><td>Student (Primary User)</td></tr>
+            <tr><td><code>libstaff</code></td><td>LIB-STAFF-01</td><td>Library Staff</td></tr>
+            <tr><td><code>libsuper</code></td><td>LIB-SUP-01</td><td>Library Supervisor</td></tr>
+            <tr><td><code>lfreviewer</code></td><td>LF-REV-01</td><td>Lost and Found Reviewer</td></tr>
+            <tr><td><code>security</code></td><td>SEC-OFF-01</td><td>Security Officer (Escalated Cases)</td></tr>
+            <tr><td><code>itstaff</code></td><td>IT-STAFF-01</td><td>IT Staff</td></tr>
+            <tr><td><code>utility</code></td><td>UT-STAFF-01</td><td>Utility Staff</td></tr>
+            <tr><td><code>manager</code></td><td>MGT-OFF-01</td><td>Management Officer</td></tr>
+            <tr><td><code>sysadmin</code></td><td>ADM-SYS-01</td><td>System Administrator</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
