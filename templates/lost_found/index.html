@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Lost & Found{% endblock %}
+{% block content %}
+<h3 class="mb-3">Lost & Found — Verification & Chain-of-Custody Handover</h3>
+
+{% if user.role == 'STUDENT' %}
+<div class="row g-4 mb-4">
+  <div class="col-md-5">
+    <div class="card shadow-sm p-3">
+      <h5 class="mb-2">Submit Lost or Found Report (LF-01 / LF-02)</h5>
+      <form method="post" action="{% url 'lost_found:submit_report' %}">
+        {% csrf_token %}
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Report Type</label>
+          <select name="report_type" class="form-select form-select-sm">
+            <option value="LOST">Lost Item</option>
+            <option value="FOUND">Found Item</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Category</label>
+          <input name="item_category" class="form-control form-control-sm" placeholder="e.g., Electronics, ID Card, Bag" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Public Safe Summary</label>
+          <input name="public_summary" class="form-control form-control-sm" placeholder="Safe general description (no secret marks)" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Private Distinguishing Details (Reviewer-Only)</label>
+          <textarea name="private_details" class="form-control form-control-sm" rows="2" placeholder="Serial number, scratches, stickers (hidden from public)" required></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Location</label>
+          <input name="location" class="form-control form-control-sm" placeholder="e.g., Central Library Floor 2" required>
+        </div>
+        <button class="btn btn-primary btn-sm w-100">Submit Report</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <div class="card shadow-sm p-3 mb-3">
+      <h5 class="mb-2">Active Found Items — Submit Ownership Claim (LF-05)</h5>
+      <p class="small text-muted mb-2">Private item marks are hidden to prevent false claims (FR-LF-12). Provide specific proof of ownership below.</p>
+      {% for item in active_found_items %}
+      <div class="border rounded p-2 mb-2 small">
+        <div class="fw-semibold">{{ item.item_category }} — {{ item.public_summary }}</div>
+        <div class="text-muted mb-2">Location: {{ item.location }}</div>
+        <form method="post" action="{% url 'lost_found:submit_claim' %}" class="d-flex gap-2">
+          {% csrf_token %}
+          <input type="hidden" name="found_report_id" value="{{ item.id }}">
+          <input name="evidence_description" class="form-control form-control-sm" placeholder="Enter ownership proof (serial, initials, receipt details)" required>
+          <button class="btn btn-sm btn-success text-nowrap">Submit Claim</button>
+        </form>
+      </div>
+      {% empty %}
+      <p class="text-muted small mb-0">No active found items currently open for claim.</p>
+      {% endfor %}
+    </div>
+
+    <div class="card shadow-sm p-3">
+      <h6 class="fw-bold">My Reports & Ownership Claims</h6>
+      <ul class="list-group list-group-flush small">
+        {% for r in my_reports %}
+        <li class="list-group-item px-0">
+          <span class="badge bg-secondary">{{ r.report_type }}</span> <strong>{{ r.public_summary }}</strong>
+          — Status: <span class="badge bg-info text-dark">{{ r.get_status_display }}</span>
+          {% if r.reviewer_note %}<div class="text-muted">Reviewer note: {{ r.reviewer_note }}</div>{% endif %}
+        </li>
+        {% endfor %}
+        {% for c in claims %}
+        <li class="list-group-item px-0">
+          <span class="badge bg-primary">CLAIM</span> {{ c.found_report.public_summary }}
+          — Status: <span class="badge bg-warning text-dark">{{ c.get_status_display }}</span>
+          {% if c.decision_reason %}<div class="text-muted">Note: {{ c.decision_reason }}</div>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if user.role in 'LF_REVIEWER,MANAGEMENT_OFFICER' %}
+<div class="card shadow-sm p-3 mb-4">
+  <h5 class="mb-2">Report Screening Queue (LF-03)</h5>
+  <div class="table-responsive">
+    <table class="table table-sm small align-middle">
+      <thead><tr><th>Type</th><th>Reporter</th><th>Public Summary</th><th>Private Details (Restricted)</th><th>Status</th><th>Review</th></tr></thead>
+      <tbody>
+        {% for r in all_reports %}
+        <tr>
+          <td><span class="badge bg-dark">{{ r.report_type }}</span></td>
+          <td>{{ r.reporter.institutional_id }}</td>
+          <td>{{ r.public_summary }} <div class="text-muted">{{ r.location }}</div></td>
+          <td class="text-danger-emphasis">{{ r.private_details }}</td>
+          <td><span class="badge bg-info text-dark">{{ r.status }}</span></td>
+          <td>
+            {% if user.role == 'LF_REVIEWER' and r.status != 'CLOSED_RETURNED' %}
+            <form method="post" action="{% url 'lost_found:review_report' r.id %}" class="d-flex gap-1">
+              {% csrf_token %}
+              <select name="status" class="form-select form-select-sm" style="width:130px;">
+                <option value="ACTIVE">Approve</option>
+                <option value="NEEDS_INFO">Clarify</option>
+                <option value="REJECTED">Reject</option>
+              </select>
+              <input name="reviewer_note" class="form-control form-control-sm" placeholder="Reason" style="width:120px;">
+              <button class="btn btn-sm btn-primary py-0">Save</button>
+            </form>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card shadow-sm p-3 mb-4">
+  <h5 class="mb-2">Potential Matches (BR-LF-01: Unverified Leads Only — Never Proof of Ownership)</h5>
+  {% if user.role == 'LF_REVIEWER' %}
+  <form method="post" action="{% url 'lost_found:suggest_match' %}" class="row g-2 mb-3">
+    {% csrf_token %}
+    <div class="col-md-4">
+      <select name="lost_report_id" class="form-select form-select-sm">
+        {% for lr in lost_reports %}<option value="{{ lr.id }}">LOST: {{ lr.public_summary }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <select name="found_report_id" class="form-select form-select-sm">
+        {% for fr in found_reports %}<option value="{{ fr.id }}">FOUND: {{ fr.public_summary }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4 d-flex gap-2">
+      <input name="rationale" class="form-control form-control-sm" placeholder="Match rationale">
+      <button class="btn btn-sm btn-outline-primary text-nowrap">Link Potential Match</button>
+    </div>
+  </form>
+  {% endif %}
+  <ul class="list-group list-group-flush small">
+    {% for m in matches %}
+    <li class="list-group-item px-0">
+      <span class="badge bg-warning text-dark">UNVERIFIED LEAD</span>
+      Lost: <strong>{{ m.lost_report.public_summary }}</strong> ↔ Found: <strong>{{ m.found_report.public_summary }}</strong>
+      <div class="text-muted">{{ m.rationale }}</div>
+    </li>
+    {% empty %}
+    <li class="list-group-item px-0 text-muted">No potential matches recorded.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if user.role in 'LF_REVIEWER,SECURITY_OFFICER,MANAGEMENT_OFFICER' %}
+<div class="card shadow-sm p-3">
+  <h5 class="mb-2">Ownership Claims, Security Escalation & Authorized Handover (LF-06 / LF-07 / LF-08)</h5>
+  <div class="table-responsive">
+    <table class="table table-sm small align-middle mb-0">
+      <thead><tr><th>Found Item</th><th>Claimant</th><th>Submitted Evidence</th><th>Status</th><th>Verification & Handover</th></tr></thead>
+      <tbody>
+        {% for c in claims %}
+        <tr>
+          <td>
+            <strong>{{ c.found_report.public_summary }}</strong>
+            <div class="text-danger-emphasis">Secret marks: {{ c.found_report.private_details }}</div>
+          </td>
+          <td>{{ c.claimant.institutional_id }}</td>
+          <td>{{ c.evidence_description }}</td>
+          <td><span class="badge bg-secondary">{{ c.get_status_display }}</span></td>
+          <td>
+            {% if user.role in 'LF_REVIEWER,SECURITY_OFFICER' and c.status != 'HANDED_OVER' %}
+              {% if c.status == 'VERIFIED' %}
+              <form method="post" action="{% url 'lost_found:record_handover' c.id %}" class="d-flex gap-1">
+                {% csrf_token %}
+                <input name="verification_note" class="form-control form-control-sm" placeholder="ID verified at desk" required>
+                <button class="btn btn-sm btn-success text-nowrap">Record Handover & Close</button>
+              </form>
+              {% else %}
+              <form method="post" action="{% url 'lost_found:decide_claim' c.id %}" class="d-flex flex-wrap gap-1">
+                {% csrf_token %}
+                <input name="reason" class="form-control form-control-sm" placeholder="Decision reason" style="width:140px;" required>
+                <button name="decision" value="verify" class="btn btn-sm btn-success py-0">Verify</button>
+                <button name="decision" value="needs_evidence" class="btn btn-sm btn-warning py-0">Need Proof</button>
+                <button name="decision" value="reject" class="btn btn-sm btn-outline-danger py-0">Reject</button>
+                {% if user.role == 'LF_REVIEWER' %}
+                <button name="decision" value="escalate" class="btn btn-sm btn-danger py-0">Escalate Security</button>
+                {% endif %}
+              </form>
+              {% endif %}
+            {% else %}
+              <span class="text-success fw-semibold">Completed / Read-Only</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">No claims assigned in your access scope.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

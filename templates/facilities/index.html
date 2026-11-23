@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Facility & Equipment Tickets{% endblock %}
+{% block content %}
+<h3 class="mb-3">Facility & Equipment Issue Ticketing (UT-01 to UT-06)</h3>
+
+{% if user.role == 'STUDENT' %}
+<div class="card shadow-sm p-3 mb-4">
+  <h5 class="mb-2">Submit New Facility or Equipment Issue</h5>
+  <form method="post" action="{% url 'facilities:submit_ticket' %}" class="row g-2">
+    {% csrf_token %}
+    <div class="col-md-3">
+      <select name="issue_type" class="form-select form-select-sm">
+        <option value="FACILITY">Facility Issue</option>
+        <option value="EQUIPMENT">Equipment Issue</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <input name="category" class="form-control form-control-sm" placeholder="Category (e.g., Projector, AC, Wi-Fi)" required>
+    </div>
+    <div class="col-md-3">
+      <input name="location" class="form-control form-control-sm" placeholder="Campus Location / Room" required>
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-primary btn-sm w-100">Submit Ticket</button>
+    </div>
+    <div class="col-12">
+      <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Describe the fault clearly..." required></textarea>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  {% for t in tickets %}
+  <div class="col-12">
+    <div class="card shadow-sm p-3">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+        <div>
+          <span class="badge bg-dark">{{ t.get_issue_type_display }}</span>
+          <span class="badge bg-{% if t.priority == 'HIGH' %}danger{% elif t.priority == 'MEDIUM' %}warning text-dark{% else %}secondary{% endif %}">{{ t.priority }}</span>
+          <strong class="ms-1">{{ t.category }}</strong> — {{ t.location }}
+          <div class="small text-muted">Reporter: {{ t.reporter.institutional_id }} | Assigned: {{ t.assigned_to.institutional_id|default:"Unassigned" }} | Reopens: {{ t.reopen_count }}</div>
+        </div>
+        <span class="badge bg-primary fs-6">{{ t.get_status_display }}</span>
+      </div>
+
+      <p class="small mb-2">{{ t.description }}</p>
+      {% if t.resolution_notes %}
+      <div class="alert alert-success py-1 px-2 small mb-2"><strong>Resolution Note:</strong> {{ t.resolution_notes }}</div>
+      {% endif %}
+
+      {% if user.role in 'UTILITY_STAFF,IT_STAFF,MANAGEMENT_OFFICER' %}
+      <form method="post" action="{% url 'facilities:update_ticket' t.id %}" class="row g-2 bg-light p-2 rounded mb-2">
+        {% csrf_token %}
+        <div class="col-md-3">
+          <select name="status" class="form-select form-select-sm">
+            {% for code, label in statuses %}
+            <option value="{{ code }}" {% if t.status == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select name="priority" class="form-select form-select-sm">
+            {% for code, label in priorities %}
+            <option value="{{ code }}" {% if t.priority == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select name="assigned_to_id" class="form-select form-select-sm">
+            <option value="">-- Assign Staff --</option>
+            {% for s in staff_pool %}
+            <option value="{{ s.id }}" {% if t.assigned_to_id == s.id %}selected{% endif %}>{{ s.institutional_id }} ({{ s.get_role_display }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+          <input name="note" class="form-control form-control-sm" placeholder="Progress / resolution note">
+          <button class="btn btn-sm btn-primary text-nowrap">Update</button>
+        </div>
+      </form>
+      {% elif user.role == 'STUDENT' and t.status == 'RESOLVED' %}
+      <form method="post" action="{% url 'facilities:update_ticket' t.id %}" class="d-flex gap-2 mb-2">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="REOPENED">
+        <input name="note" class="form-control form-control-sm" placeholder="Issue still persists? Explain reason to reopen..." required>
+        <button class="btn btn-sm btn-outline-danger text-nowrap">Reopen Ticket</button>
+      </form>
+      {% endif %}
+
+      <details class="small">
+        <summary class="text-muted">Status Transition History ({{ t.transitions.count }} events — FR-UT-13)</summary>
+        <ul class="mt-2 mb-0">
+          {% for tr in t.transitions.all %}
+          <li><code>{{ tr.created_at|date:"Y-m-d H:i" }}</code> — <strong>{{ tr.from_status }} → {{ tr.to_status }}</strong> by {{ tr.actor.institutional_id }}: {{ tr.note }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="alert alert-secondary">No tickets found in your scope.</div></div>
+  {% endfor %}
+</div>
+{% endblock %}

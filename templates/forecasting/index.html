@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}ML Demand Forecasting{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <div>
+    <h3 class="mb-0">ML-Based Library Demand Forecasting (LIB-09 / LIB-10)</h3>
+    <small class="text-muted">Aggregate demand prediction only — zero personal student histories exposed (FR-ML-05).</small>
+  </div>
+  {% if can_trigger %}
+  <form method="post" action="{% url 'forecasting:generate' %}">
+    {% csrf_token %}
+    <button class="btn btn-primary btn-sm">Retrain & Refresh Forecast</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if latest_run %}
+<div class="alert alert-warning small">
+  <strong>Forecast Transparency Notice (BR-ML-01 / NFR-ML-01):</strong> {{ latest_run.caveat_notice }}
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card shadow-sm p-3 h-100">
+      <div class="text-muted small">Model Version</div>
+      <div class="fw-bold">{{ latest_run.model_version }}</div>
+      <div class="small text-muted">Horizon: {{ latest_run.horizon_days }} days</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm p-3 h-100">
+      <div class="text-muted small">Model MAE (Time-Aware)</div>
+      <div class="fs-4 fw-bold text-success">{{ latest_run.model_mae }}</div>
+      <div class="small text-muted">RMSE: {{ latest_run.model_rmse }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm p-3 h-100">
+      <div class="text-muted small">Naive Baseline MAE</div>
+      <div class="fs-4 fw-bold text-secondary">{{ latest_run.baseline_mae }}</div>
+      <div class="small text-muted">Weekday-Slot Historical Mean</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm p-3 h-100">
+      <div class="text-muted small">Generated Timestamp</div>
+      <div class="fw-bold">{{ latest_run.generated_at|date:"Y-m-d H:i" }}</div>
+      <div class="small text-muted">Synthetic Data: {{ latest_run.is_synthetic_data|yesno:"Yes (Labeled),No" }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm p-3 mb-4">
+  <h5 class="mb-3">Predicted Demand vs. Configured Zone Capacity</h5>
+  <canvas id="forecastChart" height="95"></canvas>
+</div>
+
+<div class="card shadow-sm p-3">
+  <h5 class="mb-2">Forecast vs. Capacity vs. Live Availability (Strictly Separated — FR-LIB-24)</h5>
+  <div class="table-responsive">
+    <table class="table table-sm table-striped align-middle small mb-0">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Session</th>
+          <th>Zone</th>
+          <th class="table-primary">Predicted Demand (ML Estimate)</th>
+          <th>Configured Capacity</th>
+          <th class="table-success">Live Booked</th>
+          <th class="table-success">Live Available Now</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.pred.target_date }}</td>
+          <td>{{ r.pred.slot_label }}</td>
+          <td>{{ r.pred.zone.name }}</td>
+          <td class="table-primary fw-bold">{{ r.pred.predicted_demand }} seats</td>
+          <td>{{ r.pred.configured_capacity }} seats</td>
+          <td class="table-success">{{ r.live_booked }}</td>
+          <td class="table-success fw-semibold">{{ r.live_available }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="alert alert-secondary">No forecast exists yet. Authorized staff can trigger a run above.</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if latest_run %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  const ctx = document.getElementById("forecastChart");
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: {{ chart_labels_json|safe }},
+      datasets: [
+        {
+          label: "Predicted Demand (ML Estimate)",
+          data: {{ chart_predicted_json|safe }},
+          backgroundColor: "rgba(37, 99, 235, 0.75)"
+        },
+        {
+          label: "Configured Seat Capacity",
+          data: {{ chart_capacity_json|safe }},
+          type: "line",
+          borderColor: "rgba(220, 38, 38, 0.9)",
+          borderWidth: 2,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true, title: { display: true, text: "Seats" } } }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}
