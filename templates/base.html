@@ -4,73 +4,507 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}CampusHub{% endblock %} | Campus Service Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f8f9fa; }
-    .prototype-banner { font-size: 0.82rem; background: #1e293b; color: #e2e8f0; }
-    .card { border-radius: 0.65rem; border: 1px solid #e2e8f0; }
+    :root {
+      --sidebar-width: 268px;
+      --canvas-bg: #f3f5fb;
+      --glass-border: rgba(255, 255, 255, 0.14);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--canvas-bg);
+      color: #0f172a;
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6, .brand-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* Rock-solid Flexbox shell (prevents right-side horizontal overflow) */
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    /* ================= GLASSY SIDEBAR ================= */
+    .glass-sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: var(--sidebar-width);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 16px;
+      color: #f8fafc;
+      background:
+        linear-gradient(165deg, rgba(15, 23, 42, 0.90) 0%, rgba(30, 27, 75, 0.88) 52%, rgba(12, 74, 110, 0.88) 100%),
+        url("https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=900&q=70") center/cover no-repeat;
+      border-right: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 8px 0 32px rgba(15, 23, 42, 0.18);
+      overflow: hidden;
+      z-index: 1030;
+    }
+
+    /* Ambient glowing orbs behind sidebar glass */
+    .sidebar-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(55px);
+      opacity: 0.42;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .sidebar-orb-1 {
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, #6366f1, transparent 70%);
+      top: -40px; left: -50px;
+      animation: floatSidebarOrb 11s ease-in-out infinite alternate;
+    }
+    .sidebar-orb-2 {
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, #06b6d4, transparent 70%);
+      bottom: -50px; right: -60px;
+      animation: floatSidebarOrb 14s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes floatSidebarOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(20px, -18px) scale(1.12); }
+    }
+
+    /* Glass inner wrapper sits above orbs */
+    .sidebar-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* Brand Header */
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      margin-bottom: 18px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      text-decoration: none;
+      color: #ffffff;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.22);
+    }
+
+    .brand-logo {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366f1, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(99, 102, 241, 0.45);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 1.12rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .brand-sub {
+      font-size: 0.7rem;
+      color: #cbd5e1;
+    }
+
+    .nav-section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(203, 213, 225, 0.65);
+      padding: 6px 12px 8px;
+    }
+
+    /* Glassy Navigation Links */
+    .glass-nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .glass-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      text-decoration: none;
+      color: rgba(241, 245, 249, 0.90);
+      font-size: 0.9rem;
+      font-weight: 500;
+      border: 1px solid transparent;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.2s ease;
+    }
+
+    .glass-nav-link:hover {
+      color: #ffffff;
+      transform: translateX(3px);
+    }
+
+    .nav-icon-badge {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.98rem;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.2s ease;
+    }
+
+    /* Distinct Per-Module Glass Colors (Visible on Default, Hover & Active) */
+    .mod-dashboard { background: rgba(99, 102, 241, 0.12); border-color: rgba(129, 140, 248, 0.24); }
+    .mod-dashboard .nav-icon-badge { color: #c7d2fe; background: rgba(99, 102, 241, 0.30); border-color: rgba(129, 140, 248, 0.45); }
+    .mod-dashboard:hover { background: rgba(99, 102, 241, 0.24); border-color: rgba(165, 180, 252, 0.48); }
+    .mod-dashboard.active {
+      color: #fff; font-weight: 600;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.58), rgba(124, 58, 237, 0.42));
+      border-color: rgba(165, 180, 252, 0.75);
+      box-shadow: 0 8px 22px rgba(79, 70, 229, 0.40), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    }
+    .mod-dashboard.active .nav-icon-badge { background: #6366f1; color: #fff; border-color: transparent; }
+
+    .mod-library { background: rgba(16, 185, 129, 0.12); border-color: rgba(52, 211, 153, 0.24); }
+    .mod-library .nav-icon-badge { color: #a7f3d0; background: rgba(16, 185, 129, 0.30); border-color: rgba(52, 211, 153, 0.45); }
+    .mod-library:hover { background: rgba(16, 185, 129, 0.24); border-color: rgba(110, 231, 183, 0.48); }
+    .mod-library.active {
+      color: #fff; font-weight: 600;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.55), rgba(13, 148, 136, 0.40));
+      border-color: rgba(110, 231, 183, 0.75);
+      box-shadow: 0 8px 22px rgba(5, 150, 105, 0.38), inset 0 1px 1px rgba(255, 255, 255, 0.28);
+    }
+    .mod-library.active .nav-icon-badge { background: #10b981; color: #fff; border-color: transparent; }
+
+    .mod-lostfound { background: rgba(245, 158, 11, 0.12); border-color: rgba(251, 191, 36, 0.24); }
+    .mod-lostfound .nav-icon-badge { color: #fde68a; background: rgba(245, 158, 11, 0.30); border-color: rgba(251, 191, 36, 0.45); }
+    .mod-lostfound:hover { background: rgba(245, 158, 11, 0.24); border-color: rgba(252, 211, 77, 0.48); }
+    .mod-lostfound.active {
+      color: #fff; font-weight: 600;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.55), rgba(234, 88, 12, 0.40));
+      border-color: rgba(252, 211, 77, 0.75);
+      box-shadow: 0 8px 22px rgba(217, 119, 6, 0.38), inset 0 1px 1px rgba(255, 255, 255, 0.28);
+    }
+    .mod-lostfound.active .nav-icon-badge { background: #f59e0b; color: #fff; border-color: transparent; }
+
+    .mod-facilities { background: rgba(244, 63, 94, 0.12); border-color: rgba(251, 113, 133, 0.24); }
+    .mod-facilities .nav-icon-badge { color: #fecdd3; background: rgba(244, 63, 94, 0.30); border-color: rgba(251, 113, 133, 0.45); }
+    .mod-facilities:hover { background: rgba(244, 63, 94, 0.24); border-color: rgba(253, 164, 175, 0.48); }
+    .mod-facilities.active {
+      color: #fff; font-weight: 600;
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.55), rgba(219, 39, 119, 0.40));
+      border-color: rgba(253, 164, 175, 0.75);
+      box-shadow: 0 8px 22px rgba(225, 29, 72, 0.38), inset 0 1px 1px rgba(255, 255, 255, 0.28);
+    }
+    .mod-facilities.active .nav-icon-badge { background: #f43f5e; color: #fff; border-color: transparent; }
+
+    .mod-forecast { background: rgba(14, 165, 233, 0.12); border-color: rgba(56, 189, 248, 0.24); }
+    .mod-forecast .nav-icon-badge { color: #bae6fd; background: rgba(14, 165, 233, 0.30); border-color: rgba(56, 189, 248, 0.45); }
+    .mod-forecast:hover { background: rgba(14, 165, 233, 0.24); border-color: rgba(125, 211, 252, 0.48); }
+    .mod-forecast.active {
+      color: #fff; font-weight: 600;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.58), rgba(6, 182, 212, 0.42));
+      border-color: rgba(125, 211, 252, 0.75);
+      box-shadow: 0 8px 22px rgba(2, 132, 199, 0.40), inset 0 1px 1px rgba(255, 255, 255, 0.28);
+    }
+    .mod-forecast.active .nav-icon-badge { background: #0ea5e9; color: #fff; border-color: transparent; }
+
+    .mod-admin { background: rgba(168, 85, 247, 0.12); border-color: rgba(192, 132, 252, 0.24); }
+    .mod-admin .nav-icon-badge { color: #e9d5ff; background: rgba(168, 85, 247, 0.30); border-color: rgba(192, 132, 252, 0.45); }
+    .mod-admin:hover { background: rgba(168, 85, 247, 0.24); border-color: rgba(216, 180, 254, 0.48); }
+    .mod-admin.active {
+      color: #fff; font-weight: 600;
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.58), rgba(124, 58, 237, 0.42));
+      border-color: rgba(216, 180, 254, 0.75);
+      box-shadow: 0 8px 22px rgba(124, 58, 237, 0.40), inset 0 1px 1px rgba(255, 255, 255, 0.28);
+    }
+    .mod-admin.active .nav-icon-badge { background: #a855f7; color: #fff; border-color: transparent; }
+
+    /* Bottom Glassy Profile Card */
+    .sidebar-user-card {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    }
+
+    .user-avatar {
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: #fff;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .role-glass-pill {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.20);
+      border: 1px solid rgba(125, 211, 252, 0.38);
+      color: #e0f2fe;
+    }
+
+    .btn-glass-signout {
+      width: 100%;
+      margin-top: 10px;
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid rgba(248, 113, 113, 0.38);
+      transition: all 0.2s ease;
+    }
+    .btn-glass-signout:hover {
+      background: rgba(239, 68, 68, 0.32);
+      border-color: rgba(252, 165, 165, 0.65);
+      color: #ffffff;
+    }
+
+    /* ================= MAIN CONTENT COLUMN ================= */
+    .main-column {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    .prototype-topbar {
+      background: rgba(15, 23, 42, 0.90);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #e2e8f0;
+      font-size: 0.78rem;
+      padding: 8px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #fff;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 1rem;
+    }
+
+    .content-container {
+      padding: 24px 28px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Modern shared card defaults for child templates */
+    .card {
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    /* Mobile responsive drawer */
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      z-index: 1025;
+    }
+
+    @media (max-width: 991.98px) {
+      .glass-sidebar {
+        position: fixed;
+        left: calc(-1 * var(--sidebar-width) - 20px);
+        transition: left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .glass-sidebar.open { left: 0; }
+      .sidebar-backdrop.show { display: block; }
+      .mobile-menu-btn { display: inline-flex; align-items: center; gap: 6px; }
+      .content-container { padding: 18px 16px; }
+    }
   </style>
+  {% block extra_css %}{% endblock %}
+  {% block extra_head %}{% endblock %}
+  {% block styles %}{% endblock %}
 </head>
 <body>
-  <div class="prototype-banner py-1 px-3 text-center">
-    <strong>Academic Capstone Prototype (DIU Context)</strong> — Not institutionally approved. Uses clearly labeled synthetic prototype data & configurable rules. (Locker module excluded.)
-  </div>
+  <div class="app-shell">
+    {% if user.is_authenticated %}
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="{% url 'dashboards:home' %}">CampusHub</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="mainNav">
-        {% if user.is_authenticated %}
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item"><a class="nav-link" href="{% url 'dashboards:home' %}">Dashboard</a></li>
+    <aside class="glass-sidebar" id="glassSidebar">
+      <div class="sidebar-orb sidebar-orb-1" aria-hidden="true"></div>
+      <div class="sidebar-orb sidebar-orb-2" aria-hidden="true"></div>
+
+      <div class="sidebar-inner">
+        <a href="{% url 'dashboards:home' %}" class="brand-box">
+          <div class="brand-logo"><i class="bi bi-buildings-fill"></i></div>
+          <div>
+            <div class="brand-title">CampusHub</div>
+            <div class="brand-sub">Smart Campus Suite</div>
+          </div>
+        </a>
+
+        <div class="nav-section-label">Menu</div>
+        <ul class="glass-nav">
+          <li>
+            <a class="glass-nav-link mod-dashboard {% if request.resolver_match.app_name == 'dashboards' %}active{% endif %}" href="{% url 'dashboards:home' %}">
+              <span class="nav-icon-badge"><i class="bi bi-grid-fill"></i></span>
+              <span>Dashboard</span>
+            </a>
+          </li>
           {% if user.role in 'STUDENT,LIBRARY_STAFF,LIBRARY_SUPERVISOR,MANAGEMENT_OFFICER,SYSTEM_ADMIN' %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'library:index' %}">Library</a></li>
+          <li>
+            <a class="glass-nav-link mod-library {% if request.resolver_match.app_name == 'library' %}active{% endif %}" href="{% url 'library:index' %}">
+              <span class="nav-icon-badge"><i class="bi bi-book-half"></i></span>
+              <span>Library</span>
+            </a>
+          </li>
           {% endif %}
           {% if user.role in 'STUDENT,LF_REVIEWER,SECURITY_OFFICER,MANAGEMENT_OFFICER' %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'lost_found:index' %}">Lost & Found</a></li>
+          <li>
+            <a class="glass-nav-link mod-lostfound {% if request.resolver_match.app_name == 'lost_found' %}active{% endif %}" href="{% url 'lost_found:index' %}">
+              <span class="nav-icon-badge"><i class="bi bi-search-heart"></i></span>
+              <span>Lost & Found</span>
+            </a>
+          </li>
           {% endif %}
           {% if user.role in 'STUDENT,UTILITY_STAFF,IT_STAFF,MANAGEMENT_OFFICER,SYSTEM_ADMIN' %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'facilities:index' %}">Facilities</a></li>
+          <li>
+            <a class="glass-nav-link mod-facilities {% if request.resolver_match.app_name == 'facilities' %}active{% endif %}" href="{% url 'facilities:index' %}">
+              <span class="nav-icon-badge"><i class="bi bi-tools"></i></span>
+              <span>Facilities</span>
+            </a>
+          </li>
           {% endif %}
           {% if user.role in 'STUDENT,LIBRARY_STAFF,LIBRARY_SUPERVISOR,MANAGEMENT_OFFICER,IT_STAFF,SYSTEM_ADMIN' %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'forecasting:index' %}">ML Forecast</a></li>
+          <li>
+            <a class="glass-nav-link mod-forecast {% if request.resolver_match.app_name == 'forecasting' %}active{% endif %}" href="{% url 'forecasting:index' %}">
+              <span class="nav-icon-badge"><i class="bi bi-graph-up-arrow"></i></span>
+              <span>ML Forecast</span>
+            </a>
+          </li>
           {% endif %}
           {% if user.role == 'SYSTEM_ADMIN' %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'accounts:admin_users' %}">Admin & Audit</a></li>
+          <li>
+            <a class="glass-nav-link mod-admin {% if request.resolver_match.app_name == 'accounts' %}active{% endif %}" href="{% url 'accounts:admin_users' %}">
+              <span class="nav-icon-badge"><i class="bi bi-shield-lock-fill"></i></span>
+              <span>Admin & Audit</span>
+            </a>
+          </li>
           {% endif %}
         </ul>
-        <div class="d-flex align-items-center gap-3 text-white">
-          <span class="small">
-            <strong>{{ user.institutional_id }}</strong>
-            <span class="badge bg-light text-primary ms-1">{{ user.get_role_display }}</span>
-          </span>
-          <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+
+        <div class="sidebar-user-card">
+          <div class="d-flex align-items-center gap-2">
+            <div class="user-avatar">{{ user.institutional_id|first|upper }}</div>
+            <div class="min-w-0">
+              <div class="small fw-bold text-truncate">{{ user.institutional_id }}</div>
+              <span class="role-glass-pill">{{ user.get_role_display }}</span>
+            </div>
+          </div>
+          <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-outline-light">Sign Out</button>
+            <button type="submit" class="btn btn-glass-signout">
+              <i class="bi bi-box-arrow-right me-1"></i>Sign Out
+            </button>
           </form>
         </div>
-        {% endif %}
       </div>
-    </div>
-  </nav>
-
-  <main class="container my-4">
-    {% if messages %}
-      {% for message in messages %}
-      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      </div>
-      {% endfor %}
+    </aside>
     {% endif %}
 
-    {% block content %}{% endblock %}
-  </main>
+    <div class="main-column">
+      <header class="prototype-topbar">
+        <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()" aria-controls="glassSidebar" aria-expanded="false">
+          <i class="bi bi-list"></i><span>Menu</span>
+        </button>
+        <span><strong>Academic Capstone Prototype (DIU Context)</strong></span>
+        <span class="d-none d-md-inline">Synthetic prototype data</span>
+      </header>
+
+      <main class="content-container">
+        {% if messages %}
+          {% for message in messages %}
+          <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('glassSidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      const button = document.getElementById('mobileMenuBtn');
+      if (!sidebar) return;
+      const isOpen = sidebar.classList.toggle('open');
+      if (backdrop) backdrop.classList.toggle('show', isOpen);
+      if (button) button.setAttribute('aria-expanded', String(isOpen));
+    }
+  </script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -1,13 +1,20 @@
 {% extends "base.html" %}
 {% block title %}Library Reservation{% endblock %}
+
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-  <div>
-    <h3 class="mb-0">Library Seat Allocation & Reservation</h3>
-    <small class="text-muted">Live seat availability is distinct from ML demand estimates (LIB-01).</small>
+<!-- Page header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <span class="d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width:46px;height:46px;background:var(--ch-primary-soft);color:var(--ch-primary);">
+      <i class="bi bi-journal-bookmark-fill fs-5"></i>
+    </span>
+    <div>
+      <h3 class="mb-0 fw-bold">Library Seat Allocation &amp; Reservation</h3>
+      <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Live seat availability is distinct from ML demand estimates (LIB-01).</small>
+    </div>
   </div>
   <form method="get" class="d-flex align-items-center gap-2">
-    <label class="small fw-semibold">Operational Date:</label>
+    <label class="small fw-semibold"><i class="bi bi-calendar3 me-1 text-muted"></i>Operational Date:</label>
     <select name="date" class="form-select form-select-sm" onchange="this.form.submit()">
       {% for d in available_dates %}
       <option value="{{ d|date:'Y-m-d' }}" {% if d == selected_date %}selected{% endif %}>{{ d|date:"Y-m-d (D)" }}</option>
@@ -16,244 +23,312 @@
   </form>
 </div>
 
-<div class="alert alert-info py-2 small">
-  <strong>Active Prototype Rules (BR-LIB-03 to BR-LIB-09):</strong>
-  Max <strong>{{ policy.max_consecutive_sessions }} consecutive sessions</strong> per operational day |
-  No second booking after a confirmed booking on the same day |
-  Limits enforced <strong>per attendee identity across all creators</strong> (blocks proxy & reciprocal A↔B abuse) |
-  Check-in grace period: <strong>{{ policy.checkin_grace_minutes }} min</strong>.
+<!-- Policy rules banner -->
+<div class="alert alert-info py-2 small d-flex align-items-start gap-2" style="background:var(--ch-primary-soft);border-color:#e0e7ff;color:#3730a3;" role="note">
+  <i class="bi bi-shield-check mt-1"></i>
+  <span>
+    <strong>Active Prototype Rules (BR-LIB-03 to BR-LIB-09):</strong>
+    Max <strong>{{ policy.max_consecutive_sessions }} consecutive sessions</strong> per operational day |
+    No second booking after a confirmed booking on the same day |
+    Limits enforced <strong>per attendee identity across all creators</strong> (blocks proxy &amp; reciprocal A↔B abuse) |
+    Check-in grace period: <strong>{{ policy.checkin_grace_minutes }} min</strong>.
+  </span>
 </div>
 
+<!-- Pending invites -->
 {% if pending_invites %}
-<div class="card border-warning shadow-sm p-3 mb-4">
-  <h5 class="text-warning-emphasis mb-2">Pending Group Booking Invitations (Consent Required — FR-LIB-06)</h5>
-  {% for res in pending_invites %}
-  <div class="border rounded p-2 mb-2 bg-light d-flex flex-wrap justify-content-between align-items-center gap-2">
-    <div class="small">
-      <strong>Creator:</strong> {{ res.creator.institutional_id }} | <strong>Date:</strong> {{ res.operational_date }}
-      <ul class="mb-0 mt-1">
-        {% for a in res.allocations.all %}
-        <li>{{ a.attendee.institutional_id }} → Seat <strong>{{ a.seat.seat_code }}</strong> ({{ a.session.label }}) — Consent: <code>{{ a.consent_status }}</code></li>
-        {% endfor %}
-      </ul>
-    </div>
-    <form method="post" action="{% url 'library:respond_invite' res.id %}" class="d-flex gap-2">
-      {% csrf_token %}
-      <button name="decision" value="accept" class="btn btn-sm btn-success">Accept Invite</button>
-      <button name="decision" value="decline" class="btn btn-sm btn-outline-danger">Decline</button>
-    </form>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header d-flex align-items-center gap-2 text-warning-emphasis" style="border-bottom:1px solid #fde68a;">
+    <i class="bi bi-hourglass-split"></i>
+    <span>Pending Group Booking Invitations (Consent Required — FR-LIB-06)</span>
   </div>
-  {% endfor %}
+  <div class="card-body p-3">
+    {% for res in pending_invites %}
+    <div class="border rounded-3 p-3 mb-2 bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div class="small">
+        <strong><i class="bi bi-person me-1 text-muted"></i>Creator:</strong> {{ res.creator.institutional_id }} | <strong><i class="bi bi-calendar3 me-1 text-muted"></i>Date:</strong> {{ res.operational_date }}
+        <ul class="mb-0 mt-1">
+          {% for a in res.allocations.all %}
+          <li>{{ a.attendee.institutional_id }} → Seat <strong>{{ a.seat.seat_code }}</strong> ({{ a.session.label }}) — Consent: <code>{{ a.consent_status }}</code></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <form method="post" action="{% url 'library:respond_invite' res.id %}" class="d-flex gap-2">
+        {% csrf_token %}
+        <button name="decision" value="accept" class="btn btn-sm btn-success"><i class="bi bi-check-lg me-1"></i>Accept Invite</button>
+        <button name="decision" value="decline" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg me-1"></i>Decline</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 {% endif %}
 
-<div class="card shadow-sm p-3 mb-4">
-  <h5 class="mb-2">Live Seat & Session Availability ({{ selected_date }})</h5>
-  <div class="table-responsive">
-    <table class="table table-bordered table-sm text-center align-middle mb-0 small">
-      <thead class="table-light">
-        <tr>
-          <th class="text-start">Seat (Zone)</th>
-          {% for s in sessions %}
-          <th>{{ s.label }}</th>
+<!-- Live availability -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header d-flex align-items-center gap-2">
+    <i class="bi bi-grid-3x3-gap-fill" style="color:var(--ch-primary);"></i>
+    <span>Live Seat &amp; Session Availability ({{ selected_date }})</span>
+  </div>
+  <div class="card-body p-3">
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm text-center align-middle mb-0 small">
+        <thead class="table-light">
+          <tr>
+            <th class="text-start">Seat (Zone)</th>
+            {% for s in sessions %}
+            <th>{{ s.label }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in availability_rows %}
+          <tr>
+            <td class="text-start fw-semibold">{{ row.seat.seat_code }} <span class="text-muted fw-normal">({{ row.seat.zone.name }})</span></td>
+            {% for slot in row.slots %}
+            <td>
+              {% if slot.state == 'AVAILABLE' %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><i class="bi bi-check-circle me-1"></i>Available</span>
+              {% elif slot.state == 'BOOKED' %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill"><i class="bi bi-x-circle me-1"></i>Booked</span>
+              {% else %}
+                <span class="badge bg-secondary rounded-pill">Closed</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-muted">No seats or sessions configured for this date.</td></tr>
           {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in availability_rows %}
-        <tr>
-          <td class="text-start fw-semibold">{{ row.seat.seat_code }} <span class="text-muted fw-normal">({{ row.seat.zone.name }})</span></td>
-          {% for slot in row.slots %}
-          <td>
-            {% if slot.state == 'AVAILABLE' %}
-              <span class="badge bg-success-subtle text-success border border-success-subtle">Available</span>
-            {% elif slot.state == 'BOOKED' %}
-              <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Booked</span>
-            {% else %}
-              <span class="badge bg-secondary">Closed</span>
-            {% endif %}
-          </td>
-          {% endfor %}
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" class="text-muted">No seats or sessions configured for this date.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
+<!-- Student booking forms -->
 {% if user.role == 'STUDENT' %}
 <div class="row g-4 mb-4">
   <div class="col-md-5">
-    <div class="card shadow-sm p-3 h-100">
-      <h5 class="mb-2">Create Individual Reservation (LIB-02)</h5>
-      <form method="post" action="{% url 'library:book_individual' %}">
-        {% csrf_token %}
-        <input type="hidden" name="operational_date" value="{{ selected_date|date:'Y-m-d' }}">
-        <input type="hidden" name="idempotency_key" value="ind-{{ idempotency_token }}">
-        <div class="mb-2">
-          <label class="form-label small fw-semibold">Seat</label>
-          <select name="seat_id" class="form-select form-select-sm" required>
-            {% for seat in seats %}
-            <option value="{{ seat.id }}">{{ seat.seat_code }} — {{ seat.zone.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label small fw-semibold">Select 1 or 2 Consecutive Sessions</label>
-          {% for s in sessions %}
-          <div class="form-check small">
-            <input class="form-check-input" type="checkbox" name="session_ids" value="{{ s.id }}" id="ind-s-{{ s.id }}">
-            <label class="form-check-label" for="ind-s-{{ s.id }}">{{ s.label }}</label>
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-person-check-fill" style="color:var(--ch-primary);"></i>
+        <span>Create Individual Reservation (LIB-02)</span>
+      </div>
+      <div class="card-body p-3">
+        <form method="post" action="{% url 'library:book_individual' %}">
+          {% csrf_token %}
+          <input type="hidden" name="operational_date" value="{{ selected_date|date:'Y-m-d' }}">
+          <input type="hidden" name="idempotency_key" value="ind-{{ idempotency_token }}">
+          <div class="mb-2">
+            <label class="form-label small fw-semibold"><i class="bi bi-pin-map me-1 text-muted"></i>Seat</label>
+            <select name="seat_id" class="form-select form-select-sm" required>
+              {% for seat in seats %}
+              <option value="{{ seat.id }}">{{ seat.seat_code }} — {{ seat.zone.name }}</option>
+              {% endfor %}
+            </select>
           </div>
-          {% endfor %}
-        </div>
-        <button type="submit" class="btn btn-primary btn-sm w-100">Confirm Individual Booking</button>
-      </form>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold"><i class="bi bi-clock me-1 text-muted"></i>Select 1 or 2 Consecutive Sessions</label>
+            {% for s in sessions %}
+            <div class="form-check small">
+              <input class="form-check-input" type="checkbox" name="session_ids" value="{{ s.id }}" id="ind-s-{{ s.id }}">
+              <label class="form-check-label" for="ind-s-{{ s.id }}">{{ s.label }}</label>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="submit" class="btn btn-indigo btn-sm w-100"><i class="bi bi-calendar2-check me-1"></i>Confirm Individual Booking</button>
+        </form>
+      </div>
     </div>
   </div>
 
-  <div class="col-md-7">
-    <div class="card shadow-sm p-3 h-100">
-      <h5 class="mb-2">Create Group Reservation — Per-Attendee Sessions (LIB-05)</h5>
-      <p class="text-muted small mb-2">Assign exact sessions separately for yourself and an invited student. Booking remains <code>PENDING_CONSENT</code> until the invitee accepts.</p>
-      <form method="post" action="{% url 'library:book_group' %}">
-        {% csrf_token %}
-        <input type="hidden" name="operational_date" value="{{ selected_date|date:'Y-m-d' }}">
-        <input type="hidden" name="idempotency_key" value="grp-{{ idempotency_token }}">
-        <div class="row g-2">
-          <div class="col-md-6 border-end pe-2">
-            <div class="fw-semibold small text-primary mb-1">1. Your Allocation ({{ user.institutional_id }})</div>
-            <select name="creator_seat_id" class="form-select form-select-sm mb-2" required>
-              {% for seat in seats %}
-              <option value="{{ seat.id }}">{{ seat.seat_code }} ({{ seat.zone.name }})</option>
+<div class="col-md-7">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-people-fill" style="color:var(--ch-primary);"></i>
+        <span>Create Group Reservation — Per-Attendee Sessions (LIB-05)</span>
+      </div>
+      <div class="card-body p-3">
+        <p class="text-muted small mb-3"><i class="bi bi-info-circle me-1"></i>Assign exact sessions separately for yourself and an invited student. Booking remains <code>PENDING_CONSENT</code> until the invitee accepts.</p>
+        <form method="post" action="{% url 'library:book_group' %}">
+          {% csrf_token %}
+          <input type="hidden" name="operational_date" value="{{ selected_date|date:'Y-m-d' }}">
+          <input type="hidden" name="idempotency_key" value="grp-{{ idempotency_token }}">
+          <div class="row g-3">
+            <div class="col-md-6 border-end pe-3">
+              <div class="fw-semibold small mb-2 d-inline-flex align-items-center gap-1" style="color:var(--ch-primary);">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:22px;height:22px;background:var(--ch-primary-soft);">1</span>
+                Your Allocation ({{ user.institutional_id }})
+              </div>
+              <select name="creator_seat_id" class="form-select form-select-sm mb-2" required>
+                {% for seat in seats %}
+                <option value="{{ seat.id }}">{{ seat.seat_code }} ({{ seat.zone.name }})</option>
+                {% endfor %}
+              </select>
+              {% for s in sessions %}
+              <div class="form-check small">
+                <input class="form-check-input" type="checkbox" name="creator_session_ids" value="{{ s.id }}" id="gc-{{ s.id }}">
+                <label class="form-check-label" for="gc-{{ s.id }}">{{ s.label }}</label>
+              </div>
               {% endfor %}
-            </select>
-            {% for s in sessions %}
-            <div class="form-check small">
-              <input class="form-check-input" type="checkbox" name="creator_session_ids" value="{{ s.id }}" id="gc-{{ s.id }}">
-              <label class="form-check-label" for="gc-{{ s.id }}">{{ s.label }}</label>
             </div>
-            {% endfor %}
-          </div>
-          <div class="col-md-6 ps-2">
-            <div class="fw-semibold small text-success mb-1">2. Invited Student Allocation</div>
-            <select name="invitee_institutional_id" class="form-select form-select-sm mb-2" required>
-              {% for st in other_students %}
-              <option value="{{ st.institutional_id }}">{{ st.institutional_id }} — {{ st.first_name }}</option>
+            <div class="col-md-6 ps-3">
+              <div class="fw-semibold small mb-2 d-inline-flex align-items-center gap-1 text-success">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle text-success" style="width:22px;height:22px;">2</span>
+                Invited Student Allocation
+              </div>
+              <select name="invitee_institutional_id" class="form-select form-select-sm mb-2" required>
+                {% for st in other_students %}
+                <option value="{{ st.institutional_id }}">{{ st.institutional_id }} — {{ st.first_name }}</option>
+                {% endfor %}
+              </select>
+              <select name="invitee_seat_id" class="form-select form-select-sm mb-2" required>
+                {% for seat in seats %}
+                <option value="{{ seat.id }}">{{ seat.seat_code }} ({{ seat.zone.name }})</option>
+                {% endfor %}
+              </select>
+              {% for s in sessions %}
+              <div class="form-check small">
+                <input class="form-check-input" type="checkbox" name="invitee_session_ids" value="{{ s.id }}" id="gi-{{ s.id }}">
+                <label class="form-check-label" for="gi-{{ s.id }}">{{ s.label }}</label>
+              </div>
               {% endfor %}
-            </select>
-            <select name="invitee_seat_id" class="form-select form-select-sm mb-2" required>
-              {% for seat in seats %}
-              <option value="{{ seat.id }}">{{ seat.seat_code }} ({{ seat.zone.name }})</option>
-              {% endfor %}
-            </select>
-            {% for s in sessions %}
-            <div class="form-check small">
-              <input class="form-check-input" type="checkbox" name="invitee_session_ids" value="{{ s.id }}" id="gi-{{ s.id }}">
-              <label class="form-check-label" for="gi-{{ s.id }}">{{ s.label }}</label>
             </div>
-            {% endfor %}
           </div>
-        </div>
-        <button type="submit" class="btn btn-success btn-sm w-100 mt-3">Send Group Invitation</button>
-      </form>
+          <button type="submit" class="btn btn-success btn-sm w-100 mt-3"><i class="bi bi-send me-1"></i>Send Group Invitation</button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
 
-<div class="card shadow-sm p-3">
-  <h5 class="mb-2">My Reservations & Allocations (FR-LIB-13 / FR-LIB-16)</h5>
-  <div class="table-responsive">
-    <table class="table table-sm align-middle small mb-0">
-      <thead>
-        <tr><th>Date & Session</th><th>Seat</th><th>Attendee</th><th>Type</th><th>Consent</th><th>Status</th><th>Actions</th></tr>
-      </thead>
-      <tbody>
-        {% for a in my_allocations %}
-        <tr>
-          <td>{{ a.session.session_date }} | {{ a.session.label }}</td>
-          <td class="fw-semibold">{{ a.seat.seat_code }}</td>
-          <td>{{ a.attendee.institutional_id }}</td>
-          <td>{{ a.reservation.booking_type }}</td>
-          <td><code>{{ a.consent_status }}</code></td>
-          <td><span class="badge bg-info text-dark">{{ a.status }}</span></td>
-          <td class="d-flex gap-1">
-            {% if a.status == 'CONFIRMED' and a.attendee_id == user.id %}
-            <form method="post" action="{% url 'library:checkin' a.id %}">
-              {% csrf_token %}
-              <button class="btn btn-xs btn-sm btn-outline-success py-0">Check In</button>
-            </form>
-            {% endif %}
-            {% if a.reservation.creator_id == user.id and a.reservation.status != 'CANCELLED' %}
-            <form method="post" action="{% url 'library:cancel' a.reservation.id %}">
-              {% csrf_token %}
-              <button class="btn btn-xs btn-sm btn-outline-danger py-0">Cancel</button>
-            </form>
-            {% endif %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="7" class="text-muted">No reservations yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<!-- My reservations -->
+<div class="card border-0 shadow-sm">
+  <div class="card-header d-flex align-items-center gap-2">
+    <i class="bi bi-calendar2-week-fill" style="color:var(--ch-primary);"></i>
+    <span>My Reservations &amp; Allocations (FR-LIB-13 / FR-LIB-16)</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle small mb-0">
+        <thead>
+          <tr class="table-light">
+            <th class="ps-3">Date &amp; Session</th>
+            <th>Seat</th>
+            <th>Attendee</th>
+            <th>Type</th>
+            <th>Consent</th>
+            <th>Status</th>
+            <th class="pe-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in my_allocations %}
+          <tr>
+            <td class="ps-3"><i class="bi bi-calendar3 me-1 text-muted"></i>{{ a.session.session_date }} | {{ a.session.label }}</td>
+            <td class="fw-semibold">{{ a.seat.seat_code }}</td>
+            <td><span class="badge rounded-pill text-bg-secondary">{{ a.attendee.institutional_id }}</span></td>
+            <td>{{ a.reservation.booking_type }}</td>
+            <td><code>{{ a.consent_status }}</code></td>
+            <td><span class="badge bg-info text-dark rounded-pill">{{ a.status }}</span></td>
+            <td class="pe-3">
+              <div class="d-flex gap-1">
+                {% if a.status != 'CONFIRMED' and a.attendee_id == user.id %}
+                <form method="post" action="{% url 'library:checkin' a.id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-success py-0"><i class="bi bi-box-arrow-in-right me-1"></i>Check In</button>
+                </form>
+                {% endif %}
+                {% if a.reservation.creator_id == user.id and a.reservation.status != 'CANCELLED' %}
+                <form method="post" action="{% url 'library:cancel' a.reservation.id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-x-circle me-1"></i>Cancel</button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-muted">No reservations yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endif %}
 
+<!-- Staff controls -->
 {% if user.role in 'LIBRARY_STAFF,LIBRARY_SUPERVISOR' %}
 <div class="row g-4 mt-1">
   <div class="col-md-5">
-    <div class="card shadow-sm p-3">
-      <h5>Operational Controls (LIB-08 / LIB-11)</h5>
-      <form method="post" action="{% url 'library:release_noshows' %}" class="mb-3">
-        {% csrf_token %}
-        <button class="btn btn-warning btn-sm w-100">Run Grace-Period No-Show Seat Release</button>
-      </form>
-      <hr>
-      <h6 class="small fw-bold">Temporary Seat Closure (FR-LIB-20)</h6>
-      <form method="post" action="{% url 'library:close_seat' %}">
-        {% csrf_token %}
-        <select name="seat_id" class="form-select form-select-sm mb-2">
-          {% for seat in seats %}<option value="{{ seat.id }}">{{ seat.seat_code }} ({{ seat.zone.name }})</option>{% endfor %}
-        </select>
-        <select name="session_id" class="form-select form-select-sm mb-2">
-          {% for s in sessions %}<option value="{{ s.id }}">{{ s.label }}</option>{% endfor %}
-        </select>
-        <input name="reason" class="form-control form-control-sm mb-2" placeholder="Closure reason (e.g., Power outlet repair)" required>
-        <button class="btn btn-secondary btn-sm w-100">Apply Temporary Closure</button>
-      </form>
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-sliders" style="color:var(--ch-primary);"></i>
+        <span>Operational Controls (LIB-08 / LIB-11)</span>
+      </div>
+      <div class="card-body p-3">
+        <form method="post" action="{% url 'library:release_noshows' %}" class="mb-3">
+          {% csrf_token %}
+          <button class="btn btn-warning btn-sm w-100"><i class="bi bi-arrow-counterclockwise me-1"></i>Run Grace-Period No-Show Seat Release</button>
+        </form>
+        <hr>
+        <h6 class="small fw-bold"><i class="bi bi-cone-striped me-1 text-muted"></i>Temporary Seat Closure (FR-LIB-20)</h6>
+        <form method="post" action="{% url 'library:close_seat' %}">
+          {% csrf_token %}
+          <select name="seat_id" class="form-select form-select-sm mb-2">
+            {% for seat in seats %}<option value="{{ seat.id }}">{{ seat.seat_code }} ({{ seat.zone.name }})</option>{% endfor %}
+          </select>
+          <select name="session_id" class="form-select form-select-sm mb-2">
+            {% for s in sessions %}<option value="{{ s.id }}">{{ s.label }}</option>{% endfor %}
+          </select>
+          <input name="reason" class="form-control form-control-sm mb-2" placeholder="Closure reason (e.g., Power outlet repair)" required>
+          <button class="btn btn-secondary btn-sm w-100"><i class="bi bi-lock-fill me-1"></i>Apply Temporary Closure</button>
+        </form>
+      </div>
     </div>
   </div>
   <div class="col-md-7">
-    <div class="card shadow-sm p-3">
-      <h5>Daily Attendee Schedule ({{ selected_date }})</h5>
-      <div class="table-responsive">
-        <table class="table table-sm small mb-0">
-          <thead><tr><th>Session</th><th>Seat</th><th>Attendee</th><th>Status</th><th>Staff Action</th></tr></thead>
-          <tbody>
-            {% for a in duty_allocations %}
-            <tr>
-              <td>{{ a.session.label }}</td>
-              <td>{{ a.seat.seat_code }}</td>
-              <td>{{ a.attendee.institutional_id }}</td>
-              <td><span class="badge bg-primary">{{ a.status }}</span></td>
-              <td>
-                {% if a.status == 'CONFIRMED' %}
-                <form method="post" action="{% url 'library:checkin' a.id %}">
-                  {% csrf_token %}
-                  <button class="btn btn-sm btn-success py-0">Verify Check-In</button>
-                </form>
-                {% else %}—{% endif %}
-              </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" class="text-muted">No allocations for this date.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-clipboard-check-fill" style="color:var(--ch-primary);"></i>
+        <span>Daily Attendee Schedule ({{ selected_date }})</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm small mb-0 align-middle">
+            <thead>
+              <tr class="table-light">
+                <th class="ps-3">Session</th>
+                <th>Seat</th>
+                <th>Attendee</th>
+                <th>Status</th>
+                <th class="pe-3">Staff Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in duty_allocations %}
+              <tr>
+                <td class="ps-3">{{ a.session.label }}</td>
+                <td class="fw-semibold">{{ a.seat.seat_code }}</td>
+                <td><span class="badge rounded-pill text-bg-secondary">{{ a.attendee.institutional_id }}</span></td>
+                <td><span class="badge bg-primary rounded-pill">{{ a.status }}</span></td>
+                <td class="pe-3">
+                  {% if a.status == 'CONFIRMED' %}
+                  <form method="post" action="{% url 'library:checkin' a.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-success py-0"><i class="bi bi-person-check me-1"></i>Verify Check-In</button>
+                  </form>
+                  {% else %}—{% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-muted">No allocations for this date.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
