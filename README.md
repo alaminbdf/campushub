@@ -33,39 +33,10 @@ After seeding demo data (`python manage.py seed_demo_data`), sign in at `/accoun
 
 ---
 
-## 3. Run Locally (Docker Compose + PostgreSQL 17)
 
-```bash
-git clone https://github.com/<your-org-or-username>/campushub.git
-cd campushub
-docker compose up --build
-```
-- App URL: `http://localhost:8000`
-- Health check: `http://localhost:8000/health/`
-- Run full test suite against PostgreSQL:
-  ```bash
-  docker compose exec web pytest -q
-  ```
 
----
 
-## 4. Deploy for Free ($0/month on Render + Neon)
-
-1. **Create a Free PostgreSQL Database on Neon (`https://neon.com`):**
-   - Sign up (no credit card required), create a project in **AWS Asia Pacific (Singapore)**, and copy the pooled **Connection String** (`postgresql://...?sslmode=require`).
-2. **Deploy the Web Service on Render (`https://render.com`):**
-   - Push this repository to GitHub (see `SEQUENTIAL_COMMIT_GUIDE.md` for your two-developer commit workflow).
-   - In Render Dashboard, click **New → Blueprint**, select your GitHub repository (Render auto-reads `render.yaml`).
-   - Fill in the 3 prompted environment variables:
-     - `DATABASE_URL`: your Neon PostgreSQL connection string
-     - `DJANGO_ALLOWED_HOSTS`: `<your-service-name>.onrender.com`
-     - `CSRF_TRUSTED_ORIGINS`: `https://<your-service-name>.onrender.com`
-   - Click **Apply**. Render runs `./build.sh` (installs packages, collects static files, runs migrations, seeds all 9 demo roles and the synthetic ML forecast) and starts Gunicorn.
-3. **Free-Tier Reminder:** Render free web services sleep after 15 minutes of inactivity (~1 min cold start on the first visit), and Neon free compute scales to zero after 5 minutes of inactivity.
-
----
-
-## 5. How to Contribute (Two-Developer Protected-`main` Workflow)
+## 3. How to Contribute (Two-Developer Protected-`main` Workflow)
 
 1. Never push directly to `main`. Create a short-lived branch (`feature/<issue>-short-name` or `fix/<issue>-short-name`).
 2. Follow `SEQUENTIAL_COMMIT_GUIDE.md` so **Abdullah Al Shahriar Shobuj (`Shahriar-786`)** and **Md Alamin (`alaminbdf`)** alternate commits cleanly across their respective modules.
