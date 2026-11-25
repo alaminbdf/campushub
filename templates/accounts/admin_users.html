@@ -1,74 +1,186 @@
 {% extends "base.html" %}
 {% block title %}Admin & Audit{% endblock %}
-{% block content %}
-<h3 class="mb-3">Account, RBAC Role Governance & Append-Only Audit Log</h3>
 
-<div class="card shadow-sm p-3 mb-4">
-  <h5 class="mb-3">Manage Operational Accounts (FR-ADM-01 / FR-ADM-02)</h5>
-  <div class="table-responsive">
-    <table class="table table-sm align-middle">
-      <thead>
-        <tr>
-          <th>Institutional ID</th>
-          <th>Username</th>
-          <th>Current Role</th>
-          <th>Active</th>
-          <th>Update Role / Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for u in users %}
-        <tr>
-          <td class="fw-semibold">{{ u.institutional_id }}</td>
-          <td><code>{{ u.username }}</code></td>
-          <td><span class="badge bg-secondary">{{ u.get_role_display }}</span></td>
-          <td>{% if u.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Disabled</span>{% endif %}</td>
-          <td>
-            <form method="post" class="d-flex gap-2 align-items-center">
-              {% csrf_token %}
-              <input type="hidden" name="user_id" value="{{ u.id }}">
-              <select name="role" class="form-select form-select-sm" style="max-width: 210px;">
-                {% for code, label in roles %}
-                <option value="{{ code }}" {% if u.role == code %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-              <div class="form-check m-0">
-                <input class="form-check-input" type="checkbox" name="is_active" {% if u.is_active %}checked{% endif %}>
-              </div>
-              <input name="reason" type="text" class="form-control form-control-sm" placeholder="Audit reason" style="max-width: 170px;">
-              <button type="submit" class="btn btn-sm btn-primary">Save</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{% block extra_head %}
+<style>
+  /* ---- Admin & Audit page animations & colors ---- */
+  @keyframes admFadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes admGradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+/* Animated gradient page icon (slate→indigo→cyan: governance/security) */
+  .adm-hero-icon {
+    background: linear-gradient(135deg, #0f172a, #4f46e5, #06b6d4, #0f172a);
+    background-size: 300% 300%;
+    animation: admGradientShift 8s ease infinite;
+    color: #fff;
+  }
+
+/* Staggered card entrance */
+  .adm-rise { animation: admFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .adm-rise-1 { animation-delay: 0.05s; }
+  .adm-rise-2 { animation-delay: 0.15s; }
+
+/* Account cards hover */
+  .adm-card { transition: transform 0.22s ease, box-shadow 0.22s ease; }
+  .adm-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12) !important; }
+
+/* Table row polish */
+  .adm-table tbody tr { transition: background-color 0.18s ease; }
+  .adm-users-table tbody tr:hover { background-color: var(--ch-primary-soft); }
+  .adm-audit-table tbody tr:hover { background-color: #f8fafc; }
+
+/* Audit immutability accent */
+  .adm-lock-strip {
+    border-left: 4px solid #0f172a;
+  }
+  .adm-audit-badge {
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+
+/* Inline role-update form panel per user row */
+  .adm-role-form {
+    background: var(--ch-primary-soft);
+    border: 1px solid #e0e7ff;
+    border-radius: 0.6rem;
+    padding: 0.5rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .adm-role-form:focus-within {
+    border-color: var(--ch-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  }
+
+/* Target id monospace chip */
+  .adm-target-chip {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.4rem;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.78rem;
+    color: #334155;
+  }
+
+/* Respect reduced-motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .adm-rise, .adm-hero-icon { animation: none; }
+    .adm-card, .adm-table tbody tr, .adm-role-form { transition: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="d-flex align-items-center gap-3 mb-4 adm-rise adm-rise-1">
+  <span class="d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0 adm-hero-icon" style="width:46px;height:46px;">
+    <i class="bi bi-shield-lock-fill fs-5"></i>
+  </span>
+  <div>
+    <h3 class="mb-0 fw-bold">Account, RBAC Role Governance &amp; Append-Only Audit Log</h3>
+    <small class="text-muted"><i class="bi bi-person-gear me-1"></i>Manage operational accounts, enforce role-based access, and review the immutable audit trail.</small>
   </div>
 </div>
 
-<div class="card shadow-sm p-3">
-  <h5 class="mb-2">Immutable Audit Trail (FR-ADM-04 / NFR-SEC-03)</h5>
-  <p class="text-muted small">Records are append-only and protected from modification or deletion.</p>
-  <div class="table-responsive">
-    <table class="table table-sm table-hover small">
-      <thead>
-        <tr><th>Timestamp</th><th>Actor</th><th>Module</th><th>Action</th><th>Target</th><th>Reason</th></tr>
-      </thead>
-      <tbody>
-        {% for ev in audit_events %}
-        <tr>
-          <td>{{ ev.created_at|date:"Y-m-d H:i:s" }}</td>
-          <td>{{ ev.actor.institutional_id|default:"SYSTEM" }}</td>
-          <td><span class="badge bg-light text-dark border">{{ ev.module }}</span></td>
-          <td class="fw-semibold">{{ ev.action }}</td>
-          <td><code>{{ ev.target_type }}:{{ ev.target_id|slice:":8" }}</code></td>
-          <td>{{ ev.reason|default:"—" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6" class="text-muted">No audit events recorded yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<!-- Manage accounts -->
+<div class="card border-0 shadow-sm mb-4 adm-rise adm-rise-2 adm-card">
+  <div class="card-header d-flex align-items-center gap-2">
+    <i class="bi bi-people-fill" style="color:var(--ch-primary);"></i>
+    <span>Manage Operational Accounts (FR-ADM-01 / FR-ADM-02)</span>
+    <span class="badge badge-role ms-auto"><i class="bi bi-shield-check"></i> RBAC</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0 adm-table adm-users-table">
+        <thead>
+          <tr class="table-light">
+            <th class="ps-3">Institutional ID</th>
+            <th>Username</th>
+            <th>Current Role</th>
+            <th>Active</th>
+            <th class="pe-3">Update Role / Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td class="ps-3 fw-semibold"><i class="bi bi-person-badge me-1 text-muted"></i>{{ u.institutional_id }}</td>
+            <td><code>{{ u.username }}</code></td>
+            <td><span class="badge bg-secondary rounded-pill">{{ u.get_role_display }}</span></td>
+            <td>
+              {% if u.is_active %}
+              <span class="badge bg-success rounded-pill"><i class="bi bi-check-circle me-1"></i>Active</span>
+              {% else %}
+              <span class="badge bg-danger rounded-pill"><i class="bi bi-x-circle me-1"></i>Disabled</span>
+              {% endif %}
+            </td>
+            <td class="pe-3">
+              <form method="post" class="adm-role-form d-flex gap-2 align-items-center flex-wrap">
+                {% csrf_token %}
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <select name="role" class="form-select form-select-sm" style="max-width: 210px;">
+                  {% for code, label in roles %}
+                  <option value="{{ code }}" {% if u.role == code %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <div class="form-check m-0" title="Active status">
+                  <input class="form-check-input" type="checkbox" name="is_active" {% if u.is_active %}checked{% endif %}>
+                </div>
+                <input name="reason" type="text" class="form-control form-control-sm" placeholder="Audit reason" style="max-width: 170px;">
+                <button type="submit" class="btn btn-sm btn-indigo"><i class="bi bi-save me-1"></i>Save</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Audit trail -->
+<div class="card border-0 shadow-sm adm-rise adm-rise-2 adm-card adm-lock-strip">
+  <div class="card-header d-flex align-items-center gap-2">
+    <i class="bi bi-clock-history" style="color:#0f172a;"></i>
+    <span>Immutable Audit Trail (FR-ADM-04 / NFR-SEC-03)</span>
+    <span class="badge adm-audit-badge rounded-pill ms-auto"><i class="bi bi-lock-fill me-1"></i>Append-Only</span>
+  </div>
+  <div class="card-body p-0">
+    <p class="text-muted small mb-0 px-3 pt-3"><i class="bi bi-info-circle me-1"></i>Records are append-only and protected from modification or deletion.</p>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover small mb-0 adm-table adm-audit-table">
+        <thead>
+          <tr class="table-light">
+            <th class="ps-3">Timestamp</th>
+            <th>Actor</th>
+            <th>Module</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th class="pe-3">Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in audit_events %}
+          <tr>
+            <td class="ps-3"><i class="bi bi-clock me-1 text-muted"></i>{{ ev.created_at|date:"Y-m-d H:i:s" }}</td>
+            <td><span class="badge rounded-pill text-bg-secondary">{{ ev.actor.institutional_id|default:"SYSTEM" }}</span></td>
+            <td><span class="badge bg-light text-dark border rounded-pill">{{ ev.module }}</span></td>
+            <td class="fw-semibold">{{ ev.action }}</td>
+            <td><code class="adm-target-chip"><i class="bi bi-crosshair me-1 text-muted"></i>{{ ev.target_type }}:{{ ev.target_id|slice:":8" }}</code></td>
+            <td class="pe-3">{{ ev.reason|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-muted">No audit events recorded yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endblock %}

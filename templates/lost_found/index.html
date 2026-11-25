@@ -1,202 +1,429 @@
 {% extends "base.html" %}
 {% block title %}Lost & Found{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ---- Lost & Found: Amber/Orange accents (module #d97706) ---- */
+  @keyframes lfFadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes lfGradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes lfLeadPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.45); }
+    50%      { box-shadow: 0 0 0 6px rgba(217, 119, 6, 0); }
+  }
+
+/* Animated gradient page icon (amber→orange→rose) */
+  .lf-hero-icon {
+    width: 46px; height: 46px; border-radius: 0.85rem;
+    background: linear-gradient(135deg, #d97706, #f59e0b, #e11d48, #d97706);
+    background-size: 300% 300%;
+    animation: lfGradientShift 8s ease infinite;
+    color: #ffffff;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 6px 16px rgba(217, 119, 6, 0.35);
+    font-size: 1.15rem;
+  }
+  .lf-accent-text { color: #b45309; }
+
+/* Staggered entrance */
+  .lf-rise { animation: lfFadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .lf-rise-1 { animation-delay: 0.05s; }
+  .lf-rise-2 { animation-delay: 0.15s; }
+  .lf-rise-3 { animation-delay: 0.25s; }
+  .lf-rise-4 { animation-delay: 0.35s; }
+
+/* Cards: hover lift (works with base .card 16px radius) */
+  .lf-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .lf-card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(15,23,42,.06), 0 16px 40px rgba(15,23,42,.10) !important; }
+
+/* Amber section header tint */
+  .lf-card .card-header {
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border-bottom: 1px solid #fde68a;
+    font-weight: 700;
+    font-family: var(--ch-font-display);
+  }
+
+/* Colorful icon tiles */
+  .lf-tile {
+    width: 34px; height: 34px; border-radius: 0.6rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .lf-tile-amber  { background: #fffbeb; color: #d97706; }
+  .lf-tile-teal   { background: #ecfdf5; color: #059669; }
+  .lf-tile-rose   { background: #fff1f2; color: #e11d48; }
+  .lf-tile-indigo { background: #eef2ff; color: #4f46e5; }
+
+/* Claim cards */
+  .lf-claim {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .lf-claim:hover { border-color: #f59e0b !important; box-shadow: 0 6px 18px rgba(217, 119, 6, 0.15); }
+
+/* RED LOCK badge — reviewer-only private details */
+  .lf-secret {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 3px solid #dc2626;
+    border-radius: 8px;
+    padding: 0.25rem 0.55rem;
+    display: inline-block;
+    color: #991b1b;
+  }
+  .lf-secret i { color: #dc2626; }
+  .lf-lock-badge {
+    background: #dc2626; color: #ffffff;
+    font-size: 0.62rem; font-weight: 700;
+    border-radius: 999px; padding: 0.15rem 0.55rem;
+    letter-spacing: 0.05em;
+    display: inline-flex; align-items: center; gap: 0.3rem;
+  }
+
+/* Pulsing UNVERIFIED LEAD badge */
+  .lf-lead {
+    animation: lfLeadPulse 2s ease-in-out infinite;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+/* Amber primary button (module action) */
+  .btn-amber {
+    background: linear-gradient(135deg, #d97706, #f59e0b);
+    border: none; color: #ffffff; font-weight: 700;
+    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  }
+  .btn-amber:hover, .btn-amber:focus-visible {
+    background: linear-gradient(135deg, #b45309, #d97706);
+    color: #ffffff; filter: brightness(1.05);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(217, 119, 6, 0.4);
+  }
+
+/* Crisp scannable decision buttons */
+  .btn-decision { font-weight: 700; font-size: 0.78rem; border-radius: 999px; padding: 0.25rem 0.8rem; }
+  .btn-verify   { background: linear-gradient(135deg, #059669, #10b981); border: none; color: #fff; box-shadow: 0 3px 10px rgba(5,150,105,.3); }
+  .btn-verify:hover   { background: linear-gradient(135deg, #047857, #059669); color: #fff; }
+  .btn-needproof{ background: #fffbeb; border: 1px solid #f59e0b; color: #b45309; }
+  .btn-needproof:hover{ background: #fef3c7; color: #92400e; border-color: #d97706; }
+  .btn-reject   { background: #ffffff; border: 1px solid #fda4af; color: #be123c; }
+  .btn-reject:hover   { background: #fff1f2; color: #9f1239; border-color: #f43f5e; }
+  .btn-escalate { background: linear-gradient(135deg, #dc2626, #e11d48); border: none; color: #fff; box-shadow: 0 3px 10px rgba(220,38,38,.3); }
+  .btn-escalate:hover { background: linear-gradient(135deg, #b91c1c, #be123c); color: #fff; }
+  .btn-handover { background: linear-gradient(135deg, #059669, #0d9488); border: none; color: #fff; box-shadow: 0 4px 14px rgba(5,150,105,.3); font-weight: 700; }
+  .btn-handover:hover { background: linear-gradient(135deg, #047857, #059669); color: #fff; }
+
+/* Table polish */
+  .lf-table tbody tr { transition: background-color 0.18s ease; }
+  .lf-table tbody tr:hover { background-color: #fffbeb; }
+
+/* Staff action panel tint */
+  .lf-staff-panel {
+    background: linear-gradient(160deg, #fffbeb, #fef3c7) !important;
+    border: 1px solid #fde68a !important;
+    border-radius: 10px;
+  }
+
+/* Badges as soft rounded pills */
+  .lf-badge-soft { border-radius: 999px; font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+    .lf-rise, .lf-hero-icon, .lf-lead { animation: none; }
+    .lf-card, .lf-claim, .lf-table tbody tr { transition: none; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<h3 class="mb-3">Lost & Found — Verification & Chain-of-Custody Handover</h3>
+<!-- Page header -->
+<div class="d-flex align-items-center gap-3 mb-4 lf-rise lf-rise-1">
+  <span class="lf-hero-icon"><i class="bi bi-search-heart"></i></span>
+  <div>
+    <h3 class="mb-0 fw-bold">Lost &amp; Found — Verification &amp; Chain-of-Custody Handover</h3>
+    <small class="text-muted"><i class="bi bi-shield-lock me-1 lf-accent-text"></i>Private distinguishing details stay hidden until ownership is proven.</small>
+  </div>
+</div>
 
 {% if user.role == 'STUDENT' %}
 <div class="row g-4 mb-4">
-  <div class="col-md-5">
-    <div class="card shadow-sm p-3">
-      <h5 class="mb-2">Submit Lost or Found Report (LF-01 / LF-02)</h5>
-      <form method="post" action="{% url 'lost_found:submit_report' %}">
-        {% csrf_token %}
-        <div class="mb-2">
-          <label class="form-label small fw-semibold">Report Type</label>
-          <select name="report_type" class="form-select form-select-sm">
-            <option value="LOST">Lost Item</option>
-            <option value="FOUND">Found Item</option>
-          </select>
-        </div>
-        <div class="mb-2">
-          <label class="form-label small fw-semibold">Category</label>
-          <input name="item_category" class="form-control form-control-sm" placeholder="e.g., Electronics, ID Card, Bag" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label small fw-semibold">Public Safe Summary</label>
-          <input name="public_summary" class="form-control form-control-sm" placeholder="Safe general description (no secret marks)" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label small fw-semibold">Private Distinguishing Details (Reviewer-Only)</label>
-          <textarea name="private_details" class="form-control form-control-sm" rows="2" placeholder="Serial number, scratches, stickers (hidden from public)" required></textarea>
-        </div>
-        <div class="mb-3">
-          <label class="form-label small fw-semibold">Location</label>
-          <input name="location" class="form-control form-control-sm" placeholder="e.g., Central Library Floor 2" required>
-        </div>
-        <button class="btn btn-primary btn-sm w-100">Submit Report</button>
-      </form>
+  <!-- Report form -->
+  <div class="col-md-5 lf-rise lf-rise-2">
+    <div class="card border-0 shadow-sm h-100 lf-card">
+      <div class="card-header d-flex align-items-center gap-2">
+        <span class="lf-tile lf-tile-amber" style="width:28px;height:28px;font-size:0.85rem;"><i class="bi bi-megaphone-fill"></i></span>
+        <span>Submit Lost or Found Report (LF-01 / LF-02)</span>
+      </div>
+      <div class="card-body p-3">
+        <form method="post" action="{% url 'lost_found:submit_report' %}">
+          {% csrf_token %}
+          <div class="mb-2">
+            <label class="form-label small fw-semibold"><i class="bi bi-tag me-1 lf-accent-text"></i>Report Type</label>
+            <select name="report_type" class="form-select form-select-sm">
+              <option value="LOST">Lost Item</option>
+              <option value="FOUND">Found Item</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold"><i class="bi bi-collection me-1 lf-accent-text"></i>Category</label>
+            <input name="item_category" class="form-control form-control-sm" placeholder="e.g., Electronics, ID Card, Bag" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold"><i class="bi bi-eye me-1 lf-accent-text"></i>Public Safe Summary</label>
+            <input name="public_summary" class="form-control form-control-sm" placeholder="Safe general description (no secret marks)" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold">
+              <span class="lf-lock-badge"><i class="bi bi-lock-fill"></i>REVIEWER-ONLY</span>
+              <span class="ms-1">Private Distinguishing Details</span>
+            </label>
+            <textarea name="private_details" class="form-control form-control-sm" rows="2" placeholder="Serial number, scratches, stickers (hidden from public)" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold"><i class="bi bi-geo-alt me-1 lf-accent-text"></i>Location</label>
+            <input name="location" class="form-control form-control-sm" placeholder="e.g., Central Library Floor 2" required>
+          </div>
+          <button class="btn btn-amber btn-sm w-100"><i class="bi bi-send me-1"></i>Submit Report</button>
+        </form>
+      </div>
     </div>
   </div>
 
+<!-- Claims + my reports -->
   <div class="col-md-7">
-    <div class="card shadow-sm p-3 mb-3">
-      <h5 class="mb-2">Active Found Items — Submit Ownership Claim (LF-05)</h5>
-      <p class="small text-muted mb-2">Private item marks are hidden to prevent false claims (FR-LF-12). Provide specific proof of ownership below.</p>
-      {% for item in active_found_items %}
-      <div class="border rounded p-2 mb-2 small">
-        <div class="fw-semibold">{{ item.item_category }} — {{ item.public_summary }}</div>
-        <div class="text-muted mb-2">Location: {{ item.location }}</div>
-        <form method="post" action="{% url 'lost_found:submit_claim' %}" class="d-flex gap-2">
-          {% csrf_token %}
-          <input type="hidden" name="found_report_id" value="{{ item.id }}">
-          <input name="evidence_description" class="form-control form-control-sm" placeholder="Enter ownership proof (serial, initials, receipt details)" required>
-          <button class="btn btn-sm btn-success text-nowrap">Submit Claim</button>
-        </form>
+    <div class="card border-0 shadow-sm mb-3 lf-rise lf-rise-3 lf-card">
+      <div class="card-header d-flex align-items-center gap-2">
+        <span class="lf-tile lf-tile-teal" style="width:28px;height:28px;font-size:0.85rem;"><i class="bi bi-hand-thumbs-up-fill"></i></span>
+        <span>Active Found Items — Submit Ownership Claim (LF-05)</span>
+        <span class="badge bg-success rounded-pill lf-badge-soft ms-auto"><span class="pulse-dot me-1"></span>OPEN</span>
       </div>
-      {% empty %}
-      <p class="text-muted small mb-0">No active found items currently open for claim.</p>
-      {% endfor %}
+      <div class="card-body p-3">
+        <p class="small text-muted mb-3"><i class="bi bi-info-circle me-1 lf-accent-text"></i>Private item marks are hidden to prevent false claims (FR-LF-12). Provide specific proof of ownership below.</p>
+        {% for item in active_found_items %}
+        <div class="lf-claim p-3 mb-2 small">
+          <div class="d-flex align-items-start gap-2">
+            <span class="lf-tile lf-tile-teal"><i class="bi bi-box-seam"></i></span>
+            <div class="flex-grow-1">
+              <div class="fw-semibold">{{ item.item_category }} — {{ item.public_summary }}</div>
+              <div class="text-muted mb-2"><i class="bi bi-geo-alt me-1"></i>Location: {{ item.location }}</div>
+              <form method="post" action="{% url 'lost_found:submit_claim' %}" class="d-flex gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="found_report_id" value="{{ item.id }}">
+                <input name="evidence_description" class="form-control form-control-sm" placeholder="Enter ownership proof (serial, initials, receipt details)" required>
+                <button class="btn btn-sm btn-verify btn-decision text-nowrap"><i class="bi bi-patch-check me-1"></i>Submit Claim</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="d-flex align-items-center justify-content-center text-muted small rounded-3 py-4" style="background:#fffbeb;">
+          <i class="bi bi-inbox me-2"></i> No active found items currently open for claim.
+        </div>
+        {% endfor %}
+      </div>
     </div>
 
-    <div class="card shadow-sm p-3">
-      <h6 class="fw-bold">My Reports & Ownership Claims</h6>
-      <ul class="list-group list-group-flush small">
-        {% for r in my_reports %}
-        <li class="list-group-item px-0">
-          <span class="badge bg-secondary">{{ r.report_type }}</span> <strong>{{ r.public_summary }}</strong>
-          — Status: <span class="badge bg-info text-dark">{{ r.get_status_display }}</span>
-          {% if r.reviewer_note %}<div class="text-muted">Reviewer note: {{ r.reviewer_note }}</div>{% endif %}
-        </li>
-        {% endfor %}
-        {% for c in claims %}
-        <li class="list-group-item px-0">
-          <span class="badge bg-primary">CLAIM</span> {{ c.found_report.public_summary }}
-          — Status: <span class="badge bg-warning text-dark">{{ c.get_status_display }}</span>
-          {% if c.decision_reason %}<div class="text-muted">Note: {{ c.decision_reason }}</div>{% endif %}
-        </li>
-        {% endfor %}
-      </ul>
+<div class="card border-0 shadow-sm lf-rise lf-rise-4 lf-card">
+      <div class="card-header d-flex align-items-center gap-2">
+        <span class="lf-tile lf-tile-indigo" style="width:28px;height:28px;font-size:0.85rem;"><i class="bi bi-journals"></i></span>
+        <span>My Reports &amp; Ownership Claims</span>
+      </div>
+      <div class="card-body p-3">
+        <ul class="list-group list-group-flush small">
+          {% for r in my_reports %}
+          <li class="list-group-item px-0 d-flex align-items-start gap-2">
+            <span class="lf-tile lf-tile-amber" style="width:26px;height:26px;font-size:0.75rem;"><i class="bi bi-file-text"></i></span>
+            <span>
+              <span class="badge bg-secondary rounded-pill lf-badge-soft">{{ r.report_type }}</span> <strong>{{ r.public_summary }}</strong>
+              — Status: <span class="badge bg-info text-dark rounded-pill lf-badge-soft">{{ r.get_status_display }}</span>
+              {% if r.reviewer_note %}<div class="text-muted"><i class="bi bi-chat-dots me-1"></i>Reviewer note: {{ r.reviewer_note }}</div>{% endif %}
+            </span>
+          </li>
+          {% endfor %}
+          {% for c in claims %}
+          <li class="list-group-item px-0 d-flex align-items-start gap-2">
+            <span class="lf-tile lf-tile-teal" style="width:26px;height:26px;font-size:0.75rem;"><i class="bi bi-hand-index"></i></span>
+            <span>
+              <span class="badge bg-primary rounded-pill lf-badge-soft">CLAIM</span> {{ c.found_report.public_summary }}
+              — Status: <span class="badge bg-warning text-dark rounded-pill lf-badge-soft">{{ c.get_status_display }}</span>
+              {% if c.decision_reason %}<div class="text-muted"><i class="bi bi-chat-dots me-1"></i>Note: {{ c.decision_reason }}</div>{% endif %}
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
   </div>
 </div>
 {% endif %}
 
 {% if user.role in 'LF_REVIEWER,MANAGEMENT_OFFICER' %}
-<div class="card shadow-sm p-3 mb-4">
-  <h5 class="mb-2">Report Screening Queue (LF-03)</h5>
-  <div class="table-responsive">
-    <table class="table table-sm small align-middle">
-      <thead><tr><th>Type</th><th>Reporter</th><th>Public Summary</th><th>Private Details (Restricted)</th><th>Status</th><th>Review</th></tr></thead>
-      <tbody>
-        {% for r in all_reports %}
-        <tr>
-          <td><span class="badge bg-dark">{{ r.report_type }}</span></td>
-          <td>{{ r.reporter.institutional_id }}</td>
-          <td>{{ r.public_summary }} <div class="text-muted">{{ r.location }}</div></td>
-          <td class="text-danger-emphasis">{{ r.private_details }}</td>
-          <td><span class="badge bg-info text-dark">{{ r.status }}</span></td>
-          <td>
-            {% if user.role == 'LF_REVIEWER' and r.status != 'CLOSED_RETURNED' %}
-            <form method="post" action="{% url 'lost_found:review_report' r.id %}" class="d-flex gap-1">
-              {% csrf_token %}
-              <select name="status" class="form-select form-select-sm" style="width:130px;">
-                <option value="ACTIVE">Approve</option>
-                <option value="NEEDS_INFO">Clarify</option>
-                <option value="REJECTED">Reject</option>
-              </select>
-              <input name="reviewer_note" class="form-control form-control-sm" placeholder="Reason" style="width:120px;">
-              <button class="btn btn-sm btn-primary py-0">Save</button>
-            </form>
-            {% else %}—{% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<!-- Screening queue -->
+<div class="card border-0 shadow-sm mb-4 lf-rise lf-rise-2 lf-card">
+  <div class="card-header d-flex align-items-center gap-2">
+    <span class="lf-tile lf-tile-amber" style="width:28px;height:28px;font-size:0.85rem;"><i class="bi bi-funnel-fill"></i></span>
+    <span>Report Screening Queue (LF-03)</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm small align-middle mb-0 lf-table">
+        <thead>
+          <tr class="table-light">
+            <th class="ps-3">Type</th>
+            <th>Reporter</th>
+            <th>Public Summary</th>
+            <th>Private Details (Restricted)</th>
+            <th>Status</th>
+            <th class="pe-3">Review</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in all_reports %}
+          <tr>
+            <td class="ps-3"><span class="badge bg-dark rounded-pill lf-badge-soft">{{ r.report_type }}</span></td>
+            <td><span class="badge rounded-pill lf-badge-soft" style="background:#eef2ff;color:#4338ca;">{{ r.reporter.institutional_id }}</span></td>
+            <td>{{ r.public_summary }} <div class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ r.location }}</div></td>
+            <td>
+              <span class="lf-secret"><i class="bi bi-lock-fill me-1"></i>{{ r.private_details }}</span>
+            </td>
+            <td><span class="badge bg-info text-dark rounded-pill lf-badge-soft">{{ r.status }}</span></td>
+            <td class="pe-3">
+              {% if user.role == 'LF_REVIEWER' and r.status != 'CLOSED_RETURNED' %}
+              <form method="post" action="{% url 'lost_found:review_report' r.id %}" class="d-flex gap-1">
+                {% csrf_token %}
+                <select name="status" class="form-select form-select-sm" style="width:130px;">
+                  <option value="ACTIVE">Approve</option>
+                  <option value="NEEDS_INFO">Clarify</option>
+                  <option value="REJECTED">Reject</option>
+                </select>
+                <input name="reviewer_note" class="form-control form-control-sm" placeholder="Reason" style="width:120px;">
+                <button class="btn btn-sm btn-amber py-0"><i class="bi bi-check2 me-1"></i>Save</button>
+              </form>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
-<div class="card shadow-sm p-3 mb-4">
-  <h5 class="mb-2">Potential Matches (BR-LF-01: Unverified Leads Only — Never Proof of Ownership)</h5>
-  {% if user.role == 'LF_REVIEWER' %}
-  <form method="post" action="{% url 'lost_found:suggest_match' %}" class="row g-2 mb-3">
-    {% csrf_token %}
-    <div class="col-md-4">
-      <select name="lost_report_id" class="form-select form-select-sm">
-        {% for lr in lost_reports %}<option value="{{ lr.id }}">LOST: {{ lr.public_summary }}</option>{% endfor %}
-      </select>
-    </div>
-    <div class="col-md-4">
-      <select name="found_report_id" class="form-select form-select-sm">
-        {% for fr in found_reports %}<option value="{{ fr.id }}">FOUND: {{ fr.public_summary }}</option>{% endfor %}
-      </select>
-    </div>
-    <div class="col-md-4 d-flex gap-2">
-      <input name="rationale" class="form-control form-control-sm" placeholder="Match rationale">
-      <button class="btn btn-sm btn-outline-primary text-nowrap">Link Potential Match</button>
-    </div>
-  </form>
-  {% endif %}
-  <ul class="list-group list-group-flush small">
-    {% for m in matches %}
-    <li class="list-group-item px-0">
-      <span class="badge bg-warning text-dark">UNVERIFIED LEAD</span>
-      Lost: <strong>{{ m.lost_report.public_summary }}</strong> ↔ Found: <strong>{{ m.found_report.public_summary }}</strong>
-      <div class="text-muted">{{ m.rationale }}</div>
-    </li>
-    {% empty %}
-    <li class="list-group-item px-0 text-muted">No potential matches recorded.</li>
-    {% endfor %}
-  </ul>
+<!-- Potential matches -->
+<div class="card border-0 shadow-sm mb-4 lf-rise lf-rise-3 lf-card">
+  <div class="card-header d-flex align-items-center gap-2">
+    <span class="lf-tile lf-tile-amber" style="width:28px;height:28px;font-size:0.85rem;"><i class="bi bi-diagram-3-fill"></i></span>
+    <span>Potential Matches (BR-LF-01: Unverified Leads Only — Never Proof of Ownership)</span>
+  </div>
+  <div class="card-body p-3">
+    {% if user.role == 'LF_REVIEWER' %}
+    <form method="post" action="{% url 'lost_found:suggest_match' %}" class="row g-2 mb-3">
+      {% csrf_token %}
+      <div class="col-md-4">
+        <select name="lost_report_id" class="form-select form-select-sm">
+          {% for lr in lost_reports %}<option value="{{ lr.id }}">LOST: {{ lr.public_summary }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <select name="found_report_id" class="form-select form-select-sm">
+          {% for fr in found_reports %}<option value="{{ fr.id }}">FOUND: {{ fr.public_summary }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4 d-flex gap-2">
+        <input name="rationale" class="form-control form-control-sm" placeholder="Match rationale">
+        <button class="btn btn-sm btn-amber text-nowrap"><i class="bi bi-link-45deg me-1"></i>Link Potential Match</button>
+      </div>
+    </form>
+    {% endif %}
+    <ul class="list-group list-group-flush small">
+      {% for m in matches %}
+      <li class="list-group-item px-0 d-flex align-items-start gap-2">
+        <span class="lf-tile lf-tile-amber"><i class="bi bi-shuffle"></i></span>
+        <span>
+          <span class="badge bg-warning text-dark rounded-pill lf-badge-soft lf-lead"><i class="bi bi-exclamation-triangle-fill me-1"></i>UNVERIFIED LEAD</span>
+          Lost: <strong>{{ m.lost_report.public_summary }}</strong> ↔ Found: <strong>{{ m.found_report.public_summary }}</strong>
+          <div class="text-muted"><i class="bi bi-chat-left-text me-1"></i>{{ m.rationale }}</div>
+        </span>
+      </li>
+      {% empty %}
+      <li class="list-group-item px-0 text-muted"><i class="bi bi-inbox me-2"></i>No potential matches recorded.</li>
+      {% endfor %}
+    </ul>
+  </div>
 </div>
 {% endif %}
 
 {% if user.role in 'LF_REVIEWER,SECURITY_OFFICER,MANAGEMENT_OFFICER' %}
-<div class="card shadow-sm p-3">
-  <h5 class="mb-2">Ownership Claims, Security Escalation & Authorized Handover (LF-06 / LF-07 / LF-08)</h5>
-  <div class="table-responsive">
-    <table class="table table-sm small align-middle mb-0">
-      <thead><tr><th>Found Item</th><th>Claimant</th><th>Submitted Evidence</th><th>Status</th><th>Verification & Handover</th></tr></thead>
-      <tbody>
-        {% for c in claims %}
-        <tr>
-          <td>
-            <strong>{{ c.found_report.public_summary }}</strong>
-            <div class="text-danger-emphasis">Secret marks: {{ c.found_report.private_details }}</div>
-          </td>
-          <td>{{ c.claimant.institutional_id }}</td>
-          <td>{{ c.evidence_description }}</td>
-          <td><span class="badge bg-secondary">{{ c.get_status_display }}</span></td>
-          <td>
-            {% if user.role in 'LF_REVIEWER,SECURITY_OFFICER' and c.status != 'HANDED_OVER' %}
-              {% if c.status == 'VERIFIED' %}
-              <form method="post" action="{% url 'lost_found:record_handover' c.id %}" class="d-flex gap-1">
-                {% csrf_token %}
-                <input name="verification_note" class="form-control form-control-sm" placeholder="ID verified at desk" required>
-                <button class="btn btn-sm btn-success text-nowrap">Record Handover & Close</button>
-              </form>
-              {% else %}
-              <form method="post" action="{% url 'lost_found:decide_claim' c.id %}" class="d-flex flex-wrap gap-1">
-                {% csrf_token %}
-                <input name="reason" class="form-control form-control-sm" placeholder="Decision reason" style="width:140px;" required>
-                <button name="decision" value="verify" class="btn btn-sm btn-success py-0">Verify</button>
-                <button name="decision" value="needs_evidence" class="btn btn-sm btn-warning py-0">Need Proof</button>
-                <button name="decision" value="reject" class="btn btn-sm btn-outline-danger py-0">Reject</button>
-                {% if user.role == 'LF_REVIEWER' %}
-                <button name="decision" value="escalate" class="btn btn-sm btn-danger py-0">Escalate Security</button>
+<!-- Claims & handover -->
+<div class="card border-0 shadow-sm lf-rise lf-rise-4 lf-card">
+  <div class="card-header d-flex align-items-center gap-2">
+    <span class="lf-tile lf-tile-teal" style="width:28px;height:28px;font-size:0.85rem;"><i class="bi bi-patch-check-fill"></i></span>
+    <span>Ownership Claims, Security Escalation &amp; Authorized Handover (LF-06 / LF-07 / LF-08)</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm small align-middle mb-0 lf-table">
+        <thead>
+          <tr class="table-light">
+            <th class="ps-3">Found Item</th>
+            <th>Claimant</th>
+            <th>Submitted Evidence</th>
+            <th>Status</th>
+            <th class="pe-3">Verification &amp; Handover</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in claims %}
+          <tr>
+            <td class="ps-3">
+              <strong>{{ c.found_report.public_summary }}</strong>
+              <div>
+                <span class="lf-secret"><i class="bi bi-lock-fill me-1"></i>Secret marks: {{ c.found_report.private_details }}</span>
+              </div>
+            </td>
+            <td><span class="badge rounded-pill lf-badge-soft" style="background:#eef2ff;color:#4338ca;">{{ c.claimant.institutional_id }}</span></td>
+            <td>{{ c.evidence_description }}</td>
+            <td><span class="badge bg-secondary rounded-pill lf-badge-soft">{{ c.get_status_display }}</span></td>
+            <td class="pe-3">
+              {% if user.role in 'LF_REVIEWER,SECURITY_OFFICER' and c.status != 'HANDED_OVER' %}
+                {% if c.status == 'VERIFIED' %}
+                <form method="post" action="{% url 'lost_found:record_handover' c.id %}" class="d-flex gap-1">
+                  {% csrf_token %}
+                  <input name="verification_note" class="form-control form-control-sm" placeholder="ID verified at desk" required>
+                  <button class="btn btn-sm btn-handover text-nowrap"><i class="bi bi-box-arrow-right me-1"></i>Record Handover &amp; Close</button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'lost_found:decide_claim' c.id %}" class="d-flex flex-wrap gap-1">
+                  {% csrf_token %}
+                  <input name="reason" class="form-control form-control-sm" placeholder="Decision reason" style="width:140px;" required>
+                  <button name="decision" value="verify" class="btn btn-sm btn-verify btn-decision"><i class="bi bi-check-lg me-1"></i>Verify</button>
+                  <button name="decision" value="needs_evidence" class="btn btn-sm btn-needproof btn-decision"><i class="bi bi-question-circle me-1"></i>Need Proof</button>
+                  <button name="decision" value="reject" class="btn btn-sm btn-reject btn-decision"><i class="bi bi-x-lg me-1"></i>Reject</button>
+                  {% if user.role == 'LF_REVIEWER' %}
+                  <button name="decision" value="escalate" class="btn btn-sm btn-escalate btn-decision"><i class="bi bi-shield-exclamation me-1"></i>Escalate Security</button>
+                  {% endif %}
+                </form>
                 {% endif %}
-              </form>
+              {% else %}
+                <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Completed / Read-Only</span>
               {% endif %}
-            {% else %}
-              <span class="text-success fw-semibold">Completed / Read-Only</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" class="text-muted">No claims assigned in your access scope.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-muted">No claims assigned in your access scope.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endif %}

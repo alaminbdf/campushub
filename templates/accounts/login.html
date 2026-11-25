@@ -1,48 +1,666 @@
-{% extends "base.html" %}
-{% block title %}Sign In{% endblock %}
-{% block content %}
-<div class="row justify-content-center g-4 mt-2">
-  <div class="col-md-5">
-    <div class="card shadow-sm p-4">
-      <h4 class="mb-1">Sign In to CampusHub</h4>
-      <p class="text-muted small mb-3">Server-side Role-Based Access Control (9 SRS Operational Roles)</p>
-      <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-          <label class="form-label" for="username">Username</label>
-          <input id="username" name="username" type="text" class="form-control" required autofocus placeholder="e.g., student1">
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="password">Password</label>
-          <input id="password" name="password" type="password" class="form-control" required placeholder="CampusHub@2026">
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Sign In</button>
-      </form>
-    </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In | CampusHub — Smart Campus Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --glass-bg: rgba(15, 23, 42, 0.52);
+      --glass-border: rgba(255, 255, 255, 0.22);
+      --accent-1: #6366f1;
+      --accent-2: #06b6d4;
+      --text-main: #f8fafc;
+      --text-muted: #cbd5e1;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-color: #0b1120;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Full-screen animated library background */
+    .bg-scene {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      background:
+        linear-gradient(135deg, rgba(15, 23, 42, 0.58) 0%, rgba(30, 27, 75, 0.50) 50%, rgba(12, 74, 110, 0.54) 100%),
+        url("https://campuslife.daffodil.university/gallery/october-2023/2c79910287d528522e57856b298f1554.webp") center/cover no-repeat;
+      animation: kenBurns 28s ease-in-out infinite alternate;
+      transform-origin: center;
+    }
+
+    @keyframes kenBurns {
+      0% { transform: scale(1) translate(0, 0); }
+      100% { transform: scale(1.09) translate(-1.2%, -0.8%); }
+    }
+
+    /* Subtle ambient orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(75px);
+      opacity: 0.28;
+      z-index: -2;
+      pointer-events: none;
+    }
+    .orb-1 {
+      width: 360px; height: 360px;
+      background: radial-gradient(circle, #6366f1, transparent 70%);
+      top: -80px; left: -60px;
+      animation: floatOrb 12s ease-in-out infinite alternate;
+    }
+    .orb-2 {
+      width: 420px; height: 420px;
+      background: radial-gradient(circle, #06b6d4, transparent 70%);
+      bottom: -110px; right: -80px;
+      animation: floatOrb 15s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(35px, -28px) scale(1.12); }
+    }
+
+    /* Prototype notice bar */
+    .prototype-bar {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 8px 16px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: #e2e8f0;
+    }
+
+    /* Main centered wrapper */
+    .page-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 18px;
+    }
+
+    /* Single centered login window by default */
+    .login-grid {
+      width: 100%;
+      max-width: 470px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      align-items: stretch;
+      transition: max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: cardRise 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Expands cleanly to 2 columns when Demo Access is toggled open */
+    .login-grid.demo-open {
+      max-width: 980px;
+      grid-template-columns: 1.02fr 0.98fr;
+    }
+
+    @keyframes cardRise {
+      from { opacity: 0; transform: translateY(22px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Frosted Glass Panel */
+    .glass-panel {
+      position: relative;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px) saturate(140%);
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 36px 32px;
+      box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.55),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+      overflow: hidden;
+    }
+
+    /* Animated glass sheen sweep */
+    .glass-panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -130%;
+      width: 85%;
+      height: 100%;
+      background: linear-gradient(
+        115deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.05) 45%,
+        rgba(255, 255, 255, 0.12) 50%,
+        rgba(255, 255, 255, 0.05) 55%,
+        transparent 100%
+      );
+      transform: skewX(-20deg);
+      animation: glassSheen 7s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes glassSheen {
+      0%, 60% { left: -130%; }
+      100% { left: 160%; }
+    }
+
+    /* Demo Drawer hidden by default */
+    .demo-panel {
+      display: none;
+      animation: fadeSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .login-grid.demo-open .demo-panel {
+      display: block;
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateX(14px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Brand header + Demo Trigger Button */
+    .brand-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      color: #fff;
+      box-shadow: 0 10px 25px rgba(99, 102, 241, 0.45);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Compact Demo Option Toggle Button */
+    .demo-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.42);
+      background: rgba(14, 165, 233, 0.16);
+      color: #e0f2fe;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .demo-toggle-btn:hover {
+      background: rgba(14, 165, 233, 0.30);
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+
+    .demo-toggle-btn.active {
+      background: rgba(99, 102, 241, 0.35);
+      border-color: #a5b4fc;
+      color: #ffffff;
+    }
+
+    h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+    }
+
+    /* Alert messages */
+    .alert-glass {
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-size: 0.84rem;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(239, 68, 68, 0.22);
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      color: #fecaca;
+    }
+    .alert-glass.success {
+      background: rgba(16, 185, 129, 0.22);
+      border-color: rgba(52, 211, 153, 0.45);
+      color: #a7f3d0;
+    }
+
+    /* Form inputs */
+    .field-group { margin-bottom: 18px; }
+
+    .field-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 7px;
+      letter-spacing: 0.02em;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      color: #94a3b8;
+      font-size: 1rem;
+      pointer-events: none;
+      transition: color 0.2s ease;
+    }
+
+    .glass-input {
+      width: 100%;
+      padding: 13px 42px 13px 42px;
+      border-radius: 13px;
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      background: rgba(255, 255, 255, 0.09);
+      color: #ffffff;
+      font-size: 0.92rem;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.22s ease;
+    }
+
+    .glass-input::placeholder { color: rgba(203, 213, 225, 0.6); }
+
+    .glass-input:focus {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22);
+    }
+
+    .input-wrap:focus-within .input-icon { color: #38bdf8; }
+
+    .toggle-pass {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: #cbd5e1;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 1rem;
+    }
+    .toggle-pass:hover { color: #ffffff; }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%;
+      margin-top: 6px;
+      padding: 13px 18px;
+      border: none;
+      border-radius: 13px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(135deg, #4f46e5 0%, #0284c7 100%);
+      box-shadow: 0 12px 26px rgba(79, 70, 229, 0.42);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(6, 182, 212, 0.42);
+      filter: brightness(1.06);
+    }
+
+    .btn-submit:active { transform: translateY(0); }
+
+    .security-note {
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .pulse-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+      animation: pulse 2s infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    /* Demo Drawer Contents */
+    .demo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .demo-header h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .demo-close-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #cbd5e1;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .demo-close-btn:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+
+    .pass-pill {
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.18);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #bae6fd;
+      font-family: monospace;
+    }
+
+    .demo-hint {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .role-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .role-chip {
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.06);
+      color: #f8fafc;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .role-chip:hover {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(56, 189, 248, 0.65);
+      transform: translateY(-2px);
+    }
+
+    .role-chip.selected {
+      background: rgba(99, 102, 241, 0.30);
+      border-color: #818cf8;
+    }
+
+    .role-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .role-meta {
+      font-size: 0.7rem;
+      color: #cbd5e1;
+      font-family: monospace;
+    }
+
+    @media (max-width: 860px) {
+      .login-grid, .login-grid.demo-open {
+        grid-template-columns: 1fr;
+        max-width: 470px;
+      }
+      .glass-panel { padding: 26px 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-scene" aria-hidden="true"></div>
+  <div class="orb orb-1" aria-hidden="true"></div>
+  <div class="orb orb-2" aria-hidden="true"></div>
+
+  <div class="prototype-bar">
+    <strong>Academic Capstone Prototype (DIU Context)</strong> — Not institutionally approved. Uses labeled synthetic data & configurable rules.
   </div>
 
-  <div class="col-md-7">
-    <div class="card shadow-sm p-4">
-      <h6 class="fw-bold mb-2">Prototype Demo Accounts (Password: <code>CampusHub@2026</code>)</h6>
-      <div class="table-responsive">
-        <table class="table table-sm table-striped align-middle mb-0 small">
-          <thead>
-            <tr><th>Username</th><th>ID</th><th>Operational Role</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>student1</code> / <code>student2</code> / <code>student3</code></td><td>STU-2026-001..003</td><td>Student (Primary User)</td></tr>
-            <tr><td><code>libstaff</code></td><td>LIB-STAFF-01</td><td>Library Staff</td></tr>
-            <tr><td><code>libsuper</code></td><td>LIB-SUP-01</td><td>Library Supervisor</td></tr>
-            <tr><td><code>lfreviewer</code></td><td>LF-REV-01</td><td>Lost and Found Reviewer</td></tr>
-            <tr><td><code>security</code></td><td>SEC-OFF-01</td><td>Security Officer (Escalated Cases)</td></tr>
-            <tr><td><code>itstaff</code></td><td>IT-STAFF-01</td><td>IT Staff</td></tr>
-            <tr><td><code>utility</code></td><td>UT-STAFF-01</td><td>Utility Staff</td></tr>
-            <tr><td><code>manager</code></td><td>MGT-OFF-01</td><td>Management Officer</td></tr>
-            <tr><td><code>sysadmin</code></td><td>ADM-SYS-01</td><td>System Administrator</td></tr>
-          </tbody>
-        </table>
-      </div>
+  <main class="page-wrapper">
+    <div class="login-grid" id="loginGrid">
+      <!-- Single Centered Glass Login Window -->
+      <section class="glass-panel">
+        <div class="brand-top">
+          <div class="brand-row">
+            <div class="brand-icon"><i class="bi bi-buildings-fill"></i></div>
+            <div>
+              <div class="brand-title">CampusHub</div>
+              <div class="brand-sub">Smart Campus Service Suite</div>
+            </div>
+          </div>
+
+          <button type="button" class="demo-toggle-btn" id="demoToggleBtn" onclick="toggleDemoPanel()" aria-expanded="false">
+            <i class="bi bi-lightning-charge-fill"></i>
+            <span>Demo Roles</span>
+          </button>
+        </div>
+
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Sign in with your campus username and password to access your role-scoped workspace.</p>
+
+        {% if messages %}
+          {% for message in messages %}
+          <div class="alert-glass {% if message.tags == 'success' %}success{% endif %}">
+            <i class="bi bi-exclamation-circle-fill"></i>
+            <span>{{ message }}</span>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" autocomplete="off">
+          {% csrf_token %}
+          <div class="field-group">
+            <label class="field-label" for="username">Campus Username / ID</label>
+            <div class="input-wrap">
+              <i class="bi bi-person-badge input-icon"></i>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                class="glass-input"
+                placeholder="e.g., student1"
+                required
+                autofocus
+              >
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="password">Password</label>
+            <div class="input-wrap">
+              <i class="bi bi-shield-lock input-icon"></i>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                class="glass-input"
+                placeholder="Enter your password"
+                required
+              >
+              <button type="button" class="toggle-pass" id="togglePass" aria-label="Toggle password visibility">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit">
+            <span>Sign In to Workspace</span>
+            <i class="bi bi-arrow-right-short" style="font-size: 1.25rem;"></i>
+          </button>
+        </form>
+
+        <div class="security-note">
+          <span class="pulse-dot"></span>
+          <span>Server-side 9-role RBAC & immutable audit logging active</span>
+        </div>
+      </section>
+
+      <!-- Collapsible Quick Demo Panel (Hidden until clicked) -->
+      <aside class="glass-panel demo-panel" id="demoPanel">
+        <div class="demo-header">
+          <h3><i class="bi bi-lightning-charge-fill" style="color:#38bdf8;"></i> Quick Demo Access</h3>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="pass-pill">CampusHub@2026</span>
+            <button type="button" class="demo-close-btn" onclick="toggleDemoPanel()" aria-label="Close demo panel">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+        <p class="demo-hint">Click any operational role below to auto-fill credentials for live demonstration:</p>
+
+        <div class="role-list">
+          <button type="button" class="role-chip" onclick="fillDemo('student1', this)">
+            <div class="role-name"><i class="bi bi-mortarboard" style="color:#818cf8;"></i> Student 1</div>
+            <div class="role-meta">student1 · STU-2026-001</div>
+          </button>
+          <button type="button" class="role-chip" onclick="fillDemo('student2', this)">
+            <div class="role-name"><i class="bi bi-mortarboard" style="color:#818cf8;"></i> Student 2</div>
+            <div class="role-meta">student2 · STU-2026-002</div>
+          </button>
+          <button type="button" class="role-chip" onclick="fillDemo('libstaff', this)">
+            <div class="role-name"><i class="bi bi-book" style="color:#34d399;"></i> Library Staff</div>
+            <div class="role-meta">libstaff · LIB-STAFF-01</div>
+          </button>
+          <button type="button" class="role-chip" onclick="fillDemo('libsuper', this)">
+            <div class="role-name"><i class="bi bi-award" style="color:#10b981;"></i> Lib. Supervisor</div>
+            <div class="role-meta">libsuper · LIB-SUP-01</div>
+          </button>
+          <button type="button" class="role-chip" onclick="fillDemo('lfreviewer', this)">
+            <div class="role-name"><i class="bi bi-search" style="color:#fbbf24;"></i> L&F Reviewer</div>
+            <div class="role-meta">lfreviewer · LF-REV-01</div>
+          </button>
+          <button type="button" class="role-chip" onclick="fillDemo('security', this)">
+            <div class="role-name"><i class="bi bi-shield-exclamation" style="color:#f87171;"></i> Security Officer</div>
+            <div class="role-meta">security · SEC-OFF-01</div>
+          </button>
+          <button type="button" class="role-chip" onclick="fillDemo('utility', this)">
+            <div class="role-name"><i class="bi bi-tools" style="color:#fb7185;"></i> Utility Staff</div>
+            <div class="role-meta">utility · UT-STAFF-01</div>
+          </button>
+          <button type="button" class="role-chip" onclick="fillDemo('itstaff', this)">
+            <div class="role-name"><i class="bi bi-cpu" style="color:#38bdf8;"></i> IT Staff</div>
+            <div class="role-meta">itstaff · IT-STAFF-01</div>
+          </button>
+          <button type="button" class="role-chip" onclick="fillDemo('manager', this)">
+            <div class="role-name"><i class="bi bi-graph-up" style="color:#22d3ee;"></i> Management</div>
+            <div class="role-meta">manager · MGT-OFF-01</div>
+          </button>
+          <button type="button" class="role-chip" onclick="fillDemo('sysadmin', this)">
+            <div class="role-name"><i class="bi bi-gear-fill" style="color:#c084fc;"></i> System Admin</div>
+            <div class="role-meta">sysadmin · ADM-SYS-01</div>
+          </button>
+        </div>
+      </aside>
     </div>
-  </div>
-</div>
-{% endblock %}
+  </main>
+
+  <script>
+    function toggleDemoPanel() {
+      const grid = document.getElementById("loginGrid");
+      const btn = document.getElementById("demoToggleBtn");
+      const isOpen = grid.classList.toggle("demo-open");
+      btn.classList.toggle("active", isOpen);
+      btn.setAttribute("aria-expanded", String(isOpen));
+    }
+
+    function fillDemo(username, btn) {
+      document.getElementById("username").value = username;
+      document.getElementById("password").value = "CampusHub@2026";
+      document.querySelectorAll(".role-chip").forEach(el => el.classList.remove("selected"));
+      btn.classList.add("selected");
+      document.getElementById("username").focus();
+    }
+
+    const toggleBtn = document.getElementById("togglePass");
+    const passInput = document.getElementById("password");
+    toggleBtn.addEventListener("click", () => {
+      const isHidden = passInput.type === "password";
+      passInput.type = isHidden ? "text" : "password";
+      toggleBtn.innerHTML = isHidden ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+    });
+  </script>
+</body>
+</html>
