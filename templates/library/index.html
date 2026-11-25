@@ -1,337 +1,1321 @@
 {% extends "base.html" %}
-{% block title %}Library Reservation{% endblock %}
+
+{% block title %}Library Booking Engine{% endblock %}
+
+{% block extra_css %}
+<style>
+  .booking-studio {
+    --panel-bg: rgba(255, 255, 255, 0.95);
+    --panel-border: #e2e8f0;
+    --emerald: #10b981;
+    --blue: #2563eb;
+    --amber: #f59e0b;
+    --slate: #94a3b8;
+    position: relative;
+    color: #0f172a;
+  }
+
+  /* Top Context & Live Counter Bar */
+  .studio-topbar {
+    background: var(--panel-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 12px 18px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .studio-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .studio-badge-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #059669, #0d9488);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 1.15rem;
+    box-shadow: 0 8px 18px rgba(5, 150, 105, 0.25);
+  }
+
+  .status-pills-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+  }
+
+  .live-pill.avail { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+  .live-pill.occ   { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+  .live-pill.res   { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+
+  .dot-ind {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* 3-Column Studio Grid */
+  .studio-grid {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1.6fr) 300px;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .floating-panel {
+    background: var(--panel-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--panel-border);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+  }
+
+  .panel-heading {
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 14px;
+  }
+
+  .sub-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    margin: 14px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* 1-Click Random Seat Button */
+  .btn-random-seat {
+    width: 100%;
+    border: 1px solid #a7f3d0;
+    border-radius: 12px;
+    padding: 9px 12px;
+    background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%);
+    color: #065f46;
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);
+  }
+
+  .btn-random-seat:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d1fae5 0%, #e0f2fe 100%);
+    border-color: #10b981;
+    transform: translateY(-1px);
+  }
+
+  .btn-random-seat:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Left Zone Buttons */
+  .zone-pill-btn {
+    width: 100%;
+    text-align: left;
+    padding: 9px 13px;
+    margin-bottom: 7px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 0.83rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.16s ease;
+  }
+
+  .zone-pill-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateX(2px);
+  }
+
+  .zone-pill-btn.active {
+    background: #ecfdf5;
+    border-color: #10b981;
+    color: #065f46;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.14);
+  }
+
+  /* Status Legend Filter List */
+  .status-filter-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 7px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.83rem;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    margin-bottom: 4px;
+    transition: all 0.15s ease;
+  }
+
+  .status-filter-btn:hover { background: #f8fafc; }
+
+  .status-filter-btn.active {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .orb-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  }
+
+  /* Center Isometric 3D Stage */
+  .iso-viewport {
+    position: relative;
+    background: radial-gradient(circle at 50% 45%, #ffffff 0%, #e9eff6 100%);
+    border: 1px solid #dbe4ee;
+    border-radius: 22px;
+    padding: 10px;
+    box-shadow: inset 0 2px 12px rgba(255, 255, 255, 0.95), 0 16px 36px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+  }
+
+  .iso-stage-toolbar {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    right: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    pointer-events: none;
+    z-index: 6;
+  }
+
+  .stage-badge {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #334155;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  }
+
+  /* Zoom Controls Bar */
+  .zoom-controls-group {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    padding: 3px 6px;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  }
+
+  .zoom-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #1e293b;
+    display: grid;
+    place-items: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.14s ease, color 0.14s ease;
+  }
+
+  .zoom-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  .zoom-level-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #334155;
+    min-width: 38px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Smooth Zoom Wrapper inside Viewport */
+  .iso-zoom-canvas {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+
+  .iso-3d-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    user-select: none;
+    transform-origin: center center;
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .seat-beacon {
+    cursor: pointer;
+    transition: opacity 0.22s ease;
+  }
+
+  .seat-beacon:hover .beacon-cap {
+    filter: brightness(1.12);
+  }
+
+  .seat-beacon.dimmed {
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  @keyframes pulseRing {
+    0%, 100% { opacity: 0.45; transform: scale(1); }
+    50%      { opacity: 0.92; transform: scale(1.24); }
+  }
+
+  .beacon-ring-anim {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: pulseRing 2.2s ease-in-out infinite;
+  }
+
+  /* Interactive Hover Tooltip */
+  .iso-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.92);
+    color: #f8fafc;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+    opacity: 0;
+    transform: translate(-50%, -115%);
+    transition: opacity 0.12s ease;
+    z-index: 10;
+    white-space: nowrap;
+  }
+
+  .iso-tooltip.visible { opacity: 1; }
+
+  /* Right Inspector Panel */
+  .seat-summary-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 14px;
+  }
+
+  .chair-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #dbeafe;
+    color: #2563eb;
+    display: grid;
+    place-items: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .amenity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.83rem;
+    color: #334155;
+  }
+
+  .amenity-list li i {
+    color: #0284c7;
+    width: 18px;
+    display: inline-block;
+  }
+
+  .segmented-control {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 14px;
+  }
+
+  .seg-btn {
+    border: none;
+    background: transparent;
+    padding: 7px 10px;
+    border-radius: 9px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.16s ease;
+  }
+
+  .seg-btn.active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  }
+
+  .btn-gradient-pass {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 12px 16px;
+    font-weight: 700;
+    font-size: 0.86rem;
+    color: #ffffff;
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.28);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .btn-gradient-pass:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(6, 182, 212, 0.34);
+  }
+
+  .btn-gradient-pass:disabled {
+    opacity: 0.52;
+    cursor: not-allowed;
+  }
+
+  /* Bottom Timeline Bar */
+  .bottom-timeline-bar {
+    margin-top: 18px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 12px 20px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 8px;
+  }
+
+  .time-tick {
+    text-align: center;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 10px;
+    transition: background 0.15s ease;
+  }
+
+  .time-tick:hover { background: #f1f5f9; }
+
+  .tick-bar {
+    height: 7px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    margin-bottom: 6px;
+    transition: background 0.2s ease;
+  }
+
+  .time-tick.avail-slot .tick-bar { background: #34d399; }
+  .time-tick.selected-slot .tick-bar {
+    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.45);
+  }
+
+  .tick-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #475569;
+  }
+
+  @media (max-width: 1240px) {
+    .studio-grid { grid-template-columns: 230px minmax(0, 1fr); }
+    .right-inspector { grid-column: 1 / -1; }
+  }
+
+  @media (max-width: 768px) {
+    .studio-grid { grid-template-columns: 1fr; }
+    .bottom-timeline-bar { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Page header -->
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-  <div class="d-flex align-items-center gap-3">
-    <span class="d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width:46px;height:46px;background:var(--ch-primary-soft);color:var(--ch-primary);">
-      <i class="bi bi-journal-bookmark-fill fs-5"></i>
-    </span>
-    <div>
-      <h3 class="mb-0 fw-bold">Library Seat Allocation &amp; Reservation</h3>
-      <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Live seat availability is distinct from ML demand estimates (LIB-01).</small>
-    </div>
-  </div>
-  <form method="get" class="d-flex align-items-center gap-2">
-    <label class="small fw-semibold"><i class="bi bi-calendar3 me-1 text-muted"></i>Operational Date:</label>
-    <select name="date" class="form-select form-select-sm" onchange="this.form.submit()">
-      {% for d in available_dates %}
-      <option value="{{ d|date:'Y-m-d' }}" {% if d == selected_date %}selected{% endif %}>{{ d|date:"Y-m-d (D)" }}</option>
-      {% endfor %}
-    </select>
-  </form>
-</div>
-
-<!-- Policy rules banner -->
-<div class="alert alert-info py-2 small d-flex align-items-start gap-2" style="background:var(--ch-primary-soft);border-color:#e0e7ff;color:#3730a3;" role="note">
-  <i class="bi bi-shield-check mt-1"></i>
-  <span>
-    <strong>Active Prototype Rules (BR-LIB-03 to BR-LIB-09):</strong>
-    Max <strong>{{ policy.max_consecutive_sessions }} consecutive sessions</strong> per operational day |
-    No second booking after a confirmed booking on the same day |
-    Limits enforced <strong>per attendee identity across all creators</strong> (blocks proxy &amp; reciprocal A↔B abuse) |
-    Check-in grace period: <strong>{{ policy.checkin_grace_minutes }} min</strong>.
-  </span>
-</div>
-
-<!-- Pending invites -->
-{% if pending_invites %}
-<div class="card border-0 shadow-sm mb-4">
-  <div class="card-header d-flex align-items-center gap-2 text-warning-emphasis" style="border-bottom:1px solid #fde68a;">
-    <i class="bi bi-hourglass-split"></i>
-    <span>Pending Group Booking Invitations (Consent Required — FR-LIB-06)</span>
-  </div>
-  <div class="card-body p-3">
-    {% for res in pending_invites %}
-    <div class="border rounded-3 p-3 mb-2 bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
-      <div class="small">
-        <strong><i class="bi bi-person me-1 text-muted"></i>Creator:</strong> {{ res.creator.institutional_id }} | <strong><i class="bi bi-calendar3 me-1 text-muted"></i>Date:</strong> {{ res.operational_date }}
-        <ul class="mb-0 mt-1">
-          {% for a in res.allocations.all %}
-          <li>{{ a.attendee.institutional_id }} → Seat <strong>{{ a.seat.seat_code }}</strong> ({{ a.session.label }}) — Consent: <code>{{ a.consent_status }}</code></li>
-          {% endfor %}
-        </ul>
+<div class="booking-studio">
+  <!-- Top Bar -->
+  <div class="studio-topbar">
+    <div class="studio-title-wrap">
+      <div class="studio-badge-icon"><i class="bi bi-building"></i></div>
+      <div>
+        <h5 class="mb-0 fw-bold">Library Booking Engine</h5>
+        <div class="small text-muted">True Isometric 3D Floorplan · Real-Time Seat & Group Pod Allocation</div>
       </div>
-      <form method="post" action="{% url 'library:respond_invite' res.id %}" class="d-flex gap-2">
-        {% csrf_token %}
-        <button name="decision" value="accept" class="btn btn-sm btn-success"><i class="bi bi-check-lg me-1"></i>Accept Invite</button>
-        <button name="decision" value="decline" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg me-1"></i>Decline</button>
-      </form>
     </div>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
 
-<!-- Live availability -->
-<div class="card border-0 shadow-sm mb-4">
-  <div class="card-header d-flex align-items-center gap-2">
-    <i class="bi bi-grid-3x3-gap-fill" style="color:var(--ch-primary);"></i>
-    <span>Live Seat &amp; Session Availability ({{ selected_date }})</span>
-  </div>
-  <div class="card-body p-3">
-    <div class="table-responsive">
-      <table class="table table-bordered table-sm text-center align-middle mb-0 small">
-        <thead class="table-light">
-          <tr>
-            <th class="text-start">Seat (Zone)</th>
-            {% for s in sessions %}
-            <th>{{ s.label }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in availability_rows %}
-          <tr>
-            <td class="text-start fw-semibold">{{ row.seat.seat_code }} <span class="text-muted fw-normal">({{ row.seat.zone.name }})</span></td>
-            {% for slot in row.slots %}
-            <td>
-              {% if slot.state == 'AVAILABLE' %}
-                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><i class="bi bi-check-circle me-1"></i>Available</span>
-              {% elif slot.state == 'BOOKED' %}
-                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill"><i class="bi bi-x-circle me-1"></i>Booked</span>
-              {% else %}
-                <span class="badge bg-secondary rounded-pill">Closed</span>
-              {% endif %}
-            </td>
-            {% endfor %}
-          </tr>
-          {% empty %}
-          <tr><td colspan="5" class="text-muted">No seats or sessions configured for this date.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-sm">
+        <i class="bi bi-calendar3 text-primary me-1"></i> {% now "M d, Y" %} · <span id="topTimeLabel">10:00 AM – 02:00 PM</span>
+      </span>
     </div>
-  </div>
-</div>
 
-<!-- Student booking forms -->
-{% if user.role == 'STUDENT' %}
-<div class="row g-4 mb-4">
-  <div class="col-md-5">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header d-flex align-items-center gap-2">
-        <i class="bi bi-person-check-fill" style="color:var(--ch-primary);"></i>
-        <span>Create Individual Reservation (LIB-02)</span>
-      </div>
-      <div class="card-body p-3">
-        <form method="post" action="{% url 'library:book_individual' %}">
-          {% csrf_token %}
-          <input type="hidden" name="operational_date" value="{{ selected_date|date:'Y-m-d' }}">
-          <input type="hidden" name="idempotency_key" value="ind-{{ idempotency_token }}">
-          <div class="mb-2">
-            <label class="form-label small fw-semibold"><i class="bi bi-pin-map me-1 text-muted"></i>Seat</label>
-            <select name="seat_id" class="form-select form-select-sm" required>
-              {% for seat in seats %}
-              <option value="{{ seat.id }}">{{ seat.seat_code }} — {{ seat.zone.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold"><i class="bi bi-clock me-1 text-muted"></i>Select 1 or 2 Consecutive Sessions</label>
-            {% for s in sessions %}
-            <div class="form-check small">
-              <input class="form-check-input" type="checkbox" name="session_ids" value="{{ s.id }}" id="ind-s-{{ s.id }}">
-              <label class="form-check-label" for="ind-s-{{ s.id }}">{{ s.label }}</label>
-            </div>
-            {% endfor %}
-          </div>
-          <button type="submit" class="btn btn-indigo btn-sm w-100"><i class="bi bi-calendar2-check me-1"></i>Confirm Individual Booking</button>
-        </form>
-      </div>
+    <div class="status-pills-row">
+      <span class="live-pill avail"><span class="dot-ind" style="background:#10b981;"></span> <span id="availCount">18</span> Available</span>
+      <span class="live-pill occ"><span class="dot-ind" style="background:#ef4444;"></span> <span id="occCount">4</span> Occupied</span>
+      <span class="live-pill res"><span class="dot-ind" style="background:#f59e0b;"></span> <span id="resCount">3</span> Reserved</span>
     </div>
   </div>
 
-<div class="col-md-7">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header d-flex align-items-center gap-2">
-        <i class="bi bi-people-fill" style="color:var(--ch-primary);"></i>
-        <span>Create Group Reservation — Per-Attendee Sessions (LIB-05)</span>
-      </div>
-      <div class="card-body p-3">
-        <p class="text-muted small mb-3"><i class="bi bi-info-circle me-1"></i>Assign exact sessions separately for yourself and an invited student. Booking remains <code>PENDING_CONSENT</code> until the invitee accepts.</p>
-        <form method="post" action="{% url 'library:book_group' %}">
-          {% csrf_token %}
-          <input type="hidden" name="operational_date" value="{{ selected_date|date:'Y-m-d' }}">
-          <input type="hidden" name="idempotency_key" value="grp-{{ idempotency_token }}">
-          <div class="row g-3">
-            <div class="col-md-6 border-end pe-3">
-              <div class="fw-semibold small mb-2 d-inline-flex align-items-center gap-1" style="color:var(--ch-primary);">
-                <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:22px;height:22px;background:var(--ch-primary-soft);">1</span>
-                Your Allocation ({{ user.institutional_id }})
-              </div>
-              <select name="creator_seat_id" class="form-select form-select-sm mb-2" required>
-                {% for seat in seats %}
-                <option value="{{ seat.id }}">{{ seat.seat_code }} ({{ seat.zone.name }})</option>
-                {% endfor %}
-              </select>
-              {% for s in sessions %}
-              <div class="form-check small">
-                <input class="form-check-input" type="checkbox" name="creator_session_ids" value="{{ s.id }}" id="gc-{{ s.id }}">
-                <label class="form-check-label" for="gc-{{ s.id }}">{{ s.label }}</label>
-              </div>
-              {% endfor %}
-            </div>
-            <div class="col-md-6 ps-3">
-              <div class="fw-semibold small mb-2 d-inline-flex align-items-center gap-1 text-success">
-                <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle text-success" style="width:22px;height:22px;">2</span>
-                Invited Student Allocation
-              </div>
-              <select name="invitee_institutional_id" class="form-select form-select-sm mb-2" required>
-                {% for st in other_students %}
-                <option value="{{ st.institutional_id }}">{{ st.institutional_id }} — {{ st.first_name }}</option>
-                {% endfor %}
-              </select>
-              <select name="invitee_seat_id" class="form-select form-select-sm mb-2" required>
-                {% for seat in seats %}
-                <option value="{{ seat.id }}">{{ seat.seat_code }} ({{ seat.zone.name }})</option>
-                {% endfor %}
-              </select>
-              {% for s in sessions %}
-              <div class="form-check small">
-                <input class="form-check-input" type="checkbox" name="invitee_session_ids" value="{{ s.id }}" id="gi-{{ s.id }}">
-                <label class="form-check-label" for="gi-{{ s.id }}">{{ s.label }}</label>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          <button type="submit" class="btn btn-success btn-sm w-100 mt-3"><i class="bi bi-send me-1"></i>Send Group Invitation</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
+  <!-- 3-Column Studio Workspace -->
+  <div class="studio-grid">
+    <!-- Left Panel: Filters & Zone Explorer -->
+    <aside class="floating-panel">
+      <div class="panel-heading">Filters & Zone Explorer</div>
 
-<!-- My reservations -->
-<div class="card border-0 shadow-sm">
-  <div class="card-header d-flex align-items-center gap-2">
-    <i class="bi bi-calendar2-week-fill" style="color:var(--ch-primary);"></i>
-    <span>My Reservations &amp; Allocations (FR-LIB-13 / FR-LIB-16)</span>
-  </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-sm align-middle small mb-0">
-        <thead>
-          <tr class="table-light">
-            <th class="ps-3">Date &amp; Session</th>
-            <th>Seat</th>
-            <th>Attendee</th>
-            <th>Type</th>
-            <th>Consent</th>
-            <th>Status</th>
-            <th class="pe-3">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for a in my_allocations %}
-          <tr>
-            <td class="ps-3"><i class="bi bi-calendar3 me-1 text-muted"></i>{{ a.session.session_date }} | {{ a.session.label }}</td>
-            <td class="fw-semibold">{{ a.seat.seat_code }}</td>
-            <td><span class="badge rounded-pill text-bg-secondary">{{ a.attendee.institutional_id }}</span></td>
-            <td>{{ a.reservation.booking_type }}</td>
-            <td><code>{{ a.consent_status }}</code></td>
-            <td><span class="badge bg-info text-dark rounded-pill">{{ a.status }}</span></td>
-            <td class="pe-3">
-              <div class="d-flex gap-1">
-                {% if a.status != 'CONFIRMED' and a.attendee_id == user.id %}
-                <form method="post" action="{% url 'library:checkin' a.id %}">
-                  {% csrf_token %}
-                  <button class="btn btn-sm btn-outline-success py-0"><i class="bi bi-box-arrow-in-right me-1"></i>Check In</button>
-                </form>
-                {% endif %}
-                {% if a.reservation.creator_id == user.id and a.reservation.status != 'CANCELLED' %}
-                <form method="post" action="{% url 'library:cancel' a.reservation.id %}">
-                  {% csrf_token %}
-                  <button class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-x-circle me-1"></i>Cancel</button>
-                </form>
-                {% endif %}
-              </div>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="7" class="text-muted">No reservations yet.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-{% endif %}
+      <!-- One-Click Random Available Seat -->
+      <button type="button" class="btn-random-seat" id="randomSeatBtn" onclick="pickRandomAvailableSeat()">
+        <i class="bi bi-shuffle"></i>
+        <span>Random Available Seat</span>
+      </button>
+      <div class="small text-muted mt-1 text-center" id="randomSeatHint" style="font-size:0.72rem;">
+        Auto-selects a free seat in 1 click
+      </div>
 
-<!-- Staff controls -->
-{% if user.role in 'LIBRARY_STAFF,LIBRARY_SUPERVISOR' %}
-<div class="row g-4 mt-1">
-  <div class="col-md-5">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header d-flex align-items-center gap-2">
-        <i class="bi bi-sliders" style="color:var(--ch-primary);"></i>
-        <span>Operational Controls (LIB-08 / LIB-11)</span>
-      </div>
-      <div class="card-body p-3">
-        <form method="post" action="{% url 'library:release_noshows' %}" class="mb-3">
-          {% csrf_token %}
-          <button class="btn btn-warning btn-sm w-100"><i class="bi bi-arrow-counterclockwise me-1"></i>Run Grace-Period No-Show Seat Release</button>
-        </form>
-        <hr>
-        <h6 class="small fw-bold"><i class="bi bi-cone-striped me-1 text-muted"></i>Temporary Seat Closure (FR-LIB-20)</h6>
-        <form method="post" action="{% url 'library:close_seat' %}">
-          {% csrf_token %}
-          <select name="seat_id" class="form-select form-select-sm mb-2">
-            {% for seat in seats %}<option value="{{ seat.id }}">{{ seat.seat_code }} ({{ seat.zone.name }})</option>{% endfor %}
-          </select>
-          <select name="session_id" class="form-select form-select-sm mb-2">
-            {% for s in sessions %}<option value="{{ s.id }}">{{ s.label }}</option>{% endfor %}
-          </select>
-          <input name="reason" class="form-control form-control-sm mb-2" placeholder="Closure reason (e.g., Power outlet repair)" required>
-          <button class="btn btn-secondary btn-sm w-100"><i class="bi bi-lock-fill me-1"></i>Apply Temporary Closure</button>
-        </form>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-7">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header d-flex align-items-center gap-2">
-        <i class="bi bi-clipboard-check-fill" style="color:var(--ch-primary);"></i>
-        <span>Daily Attendee Schedule ({{ selected_date }})</span>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm small mb-0 align-middle">
-            <thead>
-              <tr class="table-light">
-                <th class="ps-3">Session</th>
-                <th>Seat</th>
-                <th>Attendee</th>
-                <th>Status</th>
-                <th class="pe-3">Staff Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for a in duty_allocations %}
-              <tr>
-                <td class="ps-3">{{ a.session.label }}</td>
-                <td class="fw-semibold">{{ a.seat.seat_code }}</td>
-                <td><span class="badge rounded-pill text-bg-secondary">{{ a.attendee.institutional_id }}</span></td>
-                <td><span class="badge bg-primary rounded-pill">{{ a.status }}</span></td>
-                <td class="pe-3">
-                  {% if a.status == 'CONFIRMED' %}
-                  <form method="post" action="{% url 'library:checkin' a.id %}">
-                    {% csrf_token %}
-                    <button class="btn btn-sm btn-success py-0"><i class="bi bi-person-check me-1"></i>Verify Check-In</button>
-                  </form>
-                  {% else %}—{% endif %}
-                </td>
-              </tr>
-              {% empty %}
-              <tr><td colspan="5" class="text-muted">No allocations for this date.</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
+      <div class="sub-label">Zones</div>
+      <button type="button" class="zone-pill-btn active" data-zone="all" onclick="filterZone('all', this)">
+        <span>All Library Zones</span>
+        <i class="bi bi-layers text-success"></i>
+      </button>
+      <button type="button" class="zone-pill-btn" data-zone="general" onclick="filterZone('general', this)">
+        <span>General Study Hall</span>
+        <i class="bi bi-grid text-primary"></i>
+      </button>
+      <button type="button" class="zone-pill-btn" data-zone="designlab" onclick="filterZone('designlab', this)">
+        <span>DesignLab / Silent Zone</span>
+        <i class="bi bi-brightness-high text-warning"></i>
+      </button>
+      <button type="button" class="zone-pill-btn" data-zone="group" onclick="filterZone('group', this)">
+        <span>Group Study Pods</span>
+        <i class="bi bi-people text-info"></i>
+      </button>
+      <button type="button" class="zone-pill-btn" data-zone="media" onclick="filterZone('media', this)">
+        <span>Media & Research</span>
+        <i class="bi bi-pc-display text-success"></i>
+      </button>
+      <button type="button" class="zone-pill-btn" data-zone="breakout" onclick="filterZone('breakout', this)">
+        <span>Window / Breakout Room</span>
+        <i class="bi bi-door-open text-danger"></i>
+      </button>
+
+      <div class="sub-label">Status</div>
+      <button type="button" class="status-filter-btn active" data-status="all" onclick="filterByStatus('all', this)">
+        <span class="orb-dot" style="background:linear-gradient(135deg,#10b981,#3b82f6);"></span>
+        <span>All Seats</span>
+      </button>
+      <button type="button" class="status-filter-btn" data-status="available" onclick="filterByStatus('available', this)">
+        <span class="orb-dot" style="background:radial-gradient(circle at 30% 30%, #6ee7b7, #059669);"></span>
+        <span>Available</span>
+      </button>
+      <button type="button" class="status-filter-btn" data-status="occupied" onclick="filterByStatus('occupied', this)">
+        <span class="orb-dot" style="background:radial-gradient(circle at 30% 30%, #cbd5e1, #64748b);"></span>
+        <span>Occupied</span>
+      </button>
+      <button type="button" class="status-filter-btn" data-status="selected" onclick="filterByStatus('selected', this)">
+        <span class="orb-dot" style="background:radial-gradient(circle at 30% 30%, #93c5fd, #2563eb);"></span>
+        <span>Your Selection</span>
+      </button>
+      <button type="button" class="status-filter-btn" data-status="reserved" onclick="filterByStatus('reserved', this)">
+        <span class="orb-dot" style="background:radial-gradient(circle at 30% 30%, #fde68a, #d97706);"></span>
+        <span>Reserved</span>
+      </button>
+    </aside>
+
+    <!-- Center Panel: Procedural Isometric 3D Architectural Cutaway -->
+    <section class="iso-viewport" id="isoViewport">
+      <div class="iso-stage-toolbar">
+        <span class="stage-badge"><i class="bi bi-box text-primary me-1"></i> Isometric 3D Cutaway · Level 2</span>
+
+        <div class="zoom-controls-group" role="group" aria-label="3D Floorplan Zoom Controls">
+          <button type="button" class="zoom-btn" onclick="adjustZoom(-0.15)" title="Zoom Out" aria-label="Zoom Out">
+            <i class="bi bi-dash-lg"></i>
+          </button>
+          <span class="zoom-level-label" id="zoomPercentLabel">100%</span>
+          <button type="button" class="zoom-btn" onclick="adjustZoom(0.15)" title="Zoom In" aria-label="Zoom In">
+            <i class="bi bi-plus-lg"></i>
+          </button>
+          <button type="button" class="zoom-btn" onclick="resetZoom()" title="Reset Zoom" aria-label="Reset Zoom">
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
         </div>
       </div>
-    </div>
+
+      <div class="iso-tooltip" id="isoTooltip"></div>
+
+      <div class="iso-zoom-canvas">
+        <svg id="iso3dSvg" viewBox="0 0 920 580" class="iso-3d-svg" role="img" aria-label="3D Isometric Library Floorplan">
+          <defs>
+            <filter id="archShadow" x="-12%" y="-12%" width="128%" height="132%">
+              <feDropShadow dx="0" dy="22" stdDeviation="18" flood-color="#0f172a" flood-opacity="0.16"/>
+            </filter>
+
+            <filter id="contactShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.5"/>
+            </filter>
+
+            <filter id="glowGreen" x="-70%" y="-70%" width="240%" height="240%">
+              <feGaussianBlur stdDeviation="4" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glowBlue" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="6" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+
+            <linearGradient id="wallLeftLight" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="100%" stop-color="#dce4ee"/>
+            </linearGradient>
+            <linearGradient id="wallRightShade" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#e2e8f0"/>
+              <stop offset="100%" stop-color="#b8c4d4"/>
+            </linearGradient>
+            <linearGradient id="oakTop" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f5cfa0"/>
+              <stop offset="100%" stop-color="#d89b56"/>
+            </linearGradient>
+            <linearGradient id="oakSide" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#b87a3d"/>
+              <stop offset="100%" stop-color="#8c5826"/>
+            </linearGradient>
+            <linearGradient id="glassPane" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#bae6fd" stop-opacity="0.42"/>
+              <stop offset="50%" stop-color="#ffffff" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0.35"/>
+            </linearGradient>
+          </defs>
+
+          <g id="archSceneRoot" filter="url(#archShadow)">
+            <g id="layerBaseAndWalls"></g>
+            <g id="layerZones"></g>
+            <g id="layerFurniture"></g>
+            <g id="layerPartitions"></g>
+            <g id="layerSeats"></g>
+            <g id="layerLabels"></g>
+            <g id="layerCallout"></g>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Right Panel: Reservation Details -->
+    <aside class="floating-panel right-inspector">
+      <div class="panel-heading">Reservation Details</div>
+
+      <div class="sub-label mt-1">Selected Seat</div>
+      <div class="seat-summary-box">
+        <div class="chair-badge"><i class="bi bi-pc-display-horizontal"></i></div>
+        <div>
+          <div class="fw-bold text-dark" id="inspSeatTitle">Table 39 · Seat 40</div>
+          <div class="small text-muted" id="inspZoneSubtitle">(General Study Hall)</div>
+        </div>
+      </div>
+
+      <div class="sub-label">Amenities</div>
+      <ul class="amenity-list">
+        <li><i class="bi bi-snow"></i> AC Climate Zone</li>
+        <li><i class="bi bi-plug"></i> Dual Power Sockets</li>
+        <li><i class="bi bi-wifi"></i> High-Speed Campus Wi-Fi</li>
+      </ul>
+
+      <div class="sub-label">Booking Type</div>
+      <div class="segmented-control">
+        <button type="button" class="seg-btn active" id="modeIndivBtn" onclick="switchMode('individual')">Individual</button>
+        <button type="button" class="seg-btn" id="modeGroupBtn" onclick="switchMode('group')">Group Booking</button>
+      </div>
+
+      <form method="post" id="seatReserveForm">
+        {% csrf_token %}
+        <input type="hidden" name="seat_code" id="inputSeatCode" value="40">
+        <input type="hidden" name="zone" id="inputZone" value="general">
+        <input type="hidden" name="booking_type" id="inputBookingType" value="individual">
+
+        <div class="mb-3">
+          <label class="sub-label mt-0" for="slotDropdown">Time Slot</label>
+          <select class="form-select form-select-sm rounded-3" name="time_slot" id="slotDropdown" onchange="syncSlotFromSelect(this.value)">
+            <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM</option>
+            <option value="10:00 AM - 02:00 PM" selected>10:00 AM - 02:00 PM</option>
+            <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM</option>
+            <option value="04:00 PM - 05:00 PM">04:00 PM - 05:00 PM</option>
+          </select>
+        </div>
+
+        <div class="mb-3 d-none" id="groupInviteField">
+          <label class="sub-label mt-0" for="attendeesInput">Group Member IDs</label>
+          <input type="text" class="form-control form-control-sm rounded-3" name="group_members" id="attendeesInput" placeholder="e.g., STU-2026-002, STU-2026-003">
+        </div>
+
+        <button type="submit" class="btn-gradient-pass" id="confirmPassBtn">
+          Confirm Reservation & Generate Pass
+        </button>
+      </form>
+    </aside>
+  </div>
+
+  <!-- Bottom Interactive Timeline Bar -->
+  <div class="bottom-timeline-bar" id="timelineBar">
+    <div class="time-tick avail-slot" onclick="pickTimelineSlot(this, '09:00 AM - 11:00 AM')"><div class="tick-bar"></div><div class="tick-label">9:00 AM</div></div>
+    <div class="time-tick selected-slot" onclick="pickTimelineSlot(this, '10:00 AM - 02:00 PM')"><div class="tick-bar"></div><div class="tick-label">10:00 AM</div></div>
+    <div class="time-tick selected-slot" onclick="pickTimelineSlot(this, '10:00 AM - 02:00 PM')"><div class="tick-bar"></div><div class="tick-label">11:00 AM</div></div>
+    <div class="time-tick selected-slot" onclick="pickTimelineSlot(this, '10:00 AM - 02:00 PM')"><div class="tick-bar"></div><div class="tick-label">12:00 PM</div></div>
+    <div class="time-tick selected-slot" onclick="pickTimelineSlot(this, '10:00 AM - 02:00 PM')"><div class="tick-bar"></div><div class="tick-label">01:00 PM</div></div>
+    <div class="time-tick avail-slot" onclick="pickTimelineSlot(this, '02:00 PM - 04:00 PM')"><div class="tick-bar"></div><div class="tick-label">02:00 PM</div></div>
+    <div class="time-tick avail-slot" onclick="pickTimelineSlot(this, '02:00 PM - 04:00 PM')"><div class="tick-bar"></div><div class="tick-label">03:00 PM</div></div>
+    <div class="time-tick avail-slot" onclick="pickTimelineSlot(this, '04:00 PM - 05:00 PM')"><div class="tick-bar"></div><div class="tick-label">04:00 PM</div></div>
+    <div class="time-tick" onclick="pickTimelineSlot(this, '04:00 PM - 05:00 PM')"><div class="tick-bar"></div><div class="tick-label">5:00 PM</div></div>
   </div>
 </div>
-{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // =========================================================================
+  // 1. TRUE 30-DEGREE ISOMETRIC PROJECTION ENGINE
+  // =========================================================================
+  const ISO_ORIGIN_X = 470;
+  const ISO_ORIGIN_Y = 78;
+  const COS30 = 0.8660254;
+  const SIN30 = 0.5;
+
+  function iso(x, y, z = 0) {
+    return {
+      x: +(ISO_ORIGIN_X + (x - y) * COS30).toFixed(2),
+      y: +(ISO_ORIGIN_Y + (x + y) * SIN30 - z).toFixed(2)
+    };
+  }
+
+  function pts(coords3D) {
+    return coords3D.map(([x, y, z = 0]) => {
+      const p = iso(x, y, z);
+      return `${p.x},${p.y}`;
+    }).join(" ");
+  }
+
+  function svgEl(tag, attrs = {}) {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      el.setAttribute(k, v);
+    }
+    return el;
+  }
+
+  function drawPrism(parent, x, y, w, d, z0, h, colors, shadow = false) {
+    if (shadow) {
+      parent.appendChild(svgEl("polygon", {
+        points: pts([[x + 3, y + 3, 0.2], [x + w + 5, y + 3, 0.2], [x + w + 5, y + d + 5, 0.2], [x + 3, y + d + 5, 0.2]]),
+        fill: "rgba(15, 23, 42, 0.14)",
+        filter: "url(#contactShadow)"
+      }));
+    }
+    parent.appendChild(svgEl("polygon", {
+      points: pts([[x, y + d, z0], [x + w, y + d, z0], [x + w, y + d, z0 + h], [x, y + d, z0 + h]]),
+      fill: colors.left,
+      stroke: colors.stroke || "none",
+      "stroke-width": colors.strokeWidth || 0.6
+    }));
+    parent.appendChild(svgEl("polygon", {
+      points: pts([[x + w, y, z0], [x + w, y + d, z0], [x + w, y + d, z0 + h], [x + w, y, z0 + h]]),
+      fill: colors.right,
+      stroke: colors.stroke || "none",
+      "stroke-width": colors.strokeWidth || 0.6
+    }));
+    parent.appendChild(svgEl("polygon", {
+      points: pts([[x, y, z0 + h], [x + w, y, z0 + h], [x + w, y + d, z0 + h], [x, y + d, z0 + h]]),
+      fill: colors.top,
+      stroke: colors.stroke || "none",
+      "stroke-width": colors.strokeWidth || 0.6
+    }));
+  }
+
+  function drawChair(parent, cx, cy, facing = "y+") {
+    const s = 11;
+    drawPrism(parent, cx - s / 2, cy - s / 2, s, s, 4, 3, {
+      top: "#475569", left: "#334155", right: "#1e293b", stroke: "#0f172a", strokeWidth: 0.4
+    }, true);
+
+    if (facing === "y+") {
+      drawPrism(parent, cx - s / 2, cy - s / 2, s, 2.5, 7, 9, { top: "#64748b", left: "#334155", right: "#1e293b" });
+    } else if (facing === "y-") {
+      drawPrism(parent, cx - s / 2, cy + s / 2 - 2.5, s, 2.5, 7, 9, { top: "#64748b", left: "#334155", right: "#1e293b" });
+    } else if (facing === "x+") {
+      drawPrism(parent, cx - s / 2, cy - s / 2, 2.5, s, 7, 9, { top: "#64748b", left: "#334155", right: "#1e293b" });
+    } else {
+      drawPrism(parent, cx + s / 2 - 2.5, cy - s / 2, 2.5, s, 7, 9, { top: "#64748b", left: "#334155", right: "#1e293b" });
+    }
+  }
+
+  function drawStudyTable(parent, x, y, w, d, opts = {}) {
+    const legC = { top: "#334155", left: "#1e293b", right: "#0f172a" };
+    drawPrism(parent, x + 2, y + 2, 2.5, 2.5, 0, 12, legC);
+    drawPrism(parent, x + w - 4.5, y + 2, 2.5, 2.5, 0, 12, legC);
+    drawPrism(parent, x + 2, y + d - 4.5, 2.5, 2.5, 0, 12, legC);
+    drawPrism(parent, x + w - 4.5, y + d - 4.5, 2.5, 2.5, 0, 12, legC);
+
+    drawPrism(parent, x, y, w, d, 12, 3.2, {
+      top: "url(#oakTop)",
+      left: "url(#oakSide)",
+      right: "#9c622b",
+      stroke: "#8c5826",
+      strokeWidth: 0.6
+    }, true);
+
+    if (opts.monitors) {
+      opts.monitors.forEach(([mx, my]) => {
+        drawPrism(parent, x + mx, y + my, 3, 12, 15.2, 8, {
+          top: "#334155", left: "#0f172a", right: "#38bdf8", stroke: "#0284c7", strokeWidth: 0.5
+        });
+      });
+    }
+
+    if (opts.chairsTop) {
+      opts.chairsTop.forEach(cx => drawChair(parent, x + cx, y - 8, "y+"));
+    }
+    if (opts.chairsBottom) {
+      opts.chairsBottom.forEach(cx => drawChair(parent, x + cx, y + d + 8, "y-"));
+    }
+  }
+
+  function drawBookshelf(parent, x, y, alongX = true) {
+    const w = alongX ? 46 : 12;
+    const d = alongX ? 12 : 46;
+    drawPrism(parent, x, y, w, d, 0, 34, {
+      top: "#d99b52", left: "#b87a3d", right: "#8c5826", stroke: "#78350f", strokeWidth: 0.7
+    }, true);
+
+    const bookColors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+    [8, 17, 26].forEach((tierZ, idx) => {
+      if (alongX) {
+        parent.appendChild(svgEl("polygon", {
+          points: pts([[x + 3, y + d + 0.2, tierZ], [x + w - 3, y + d + 0.2, tierZ], [x + w - 3, y + d + 0.2, tierZ + 5.5], [x + 3, y + d + 0.2, tierZ + 5.5]]),
+          fill: bookColors[idx % bookColors.length],
+          opacity: "0.85"
+        }));
+      } else {
+        parent.appendChild(svgEl("polygon", {
+          points: pts([[x + w + 0.2, y + 3, tierZ], [x + w + 0.2, y + d - 3, tierZ], [x + w + 0.2, y + d - 3, tierZ + 5.5], [x + w + 0.2, y + 3, tierZ + 5.5]]),
+          fill: bookColors[(idx + 1) % bookColors.length],
+          opacity: "0.85"
+        }));
+      }
+    });
+  }
+
+  // =========================================================================
+  // 2. BUILD STATIC 3D ARCHITECTURE & FURNITURE ONCE
+  // =========================================================================
+  function buildArchitecture() {
+    const baseLayer = document.getElementById("layerBaseAndWalls");
+    const zoneLayer = document.getElementById("layerZones");
+    const furnLayer = document.getElementById("layerFurniture");
+    const partLayer = document.getElementById("layerPartitions");
+    const labelLayer = document.getElementById("layerLabels");
+
+    const footprint = [
+      [0, 0], [420, 0], [420, 250], [310, 250], [310, 340], [175, 340], [175, 305], [0, 305]
+    ];
+
+    for (let i = 0; i < footprint.length; i++) {
+      const [x1, y1] = footprint[i];
+      const [x2, y2] = footprint[(i + 1) % footprint.length];
+      if (y1 >= 250 || x1 >= 310 || (x1 === 0 && y1 === 305)) {
+        const isRightFacing = (x1 === x2);
+        baseLayer.appendChild(svgEl("polygon", {
+          points: pts([[x1, y1, 0], [x2, y2, 0], [x2, y2, -16], [x1, y1, -16]]),
+          fill: isRightFacing ? "#94a3b8" : "#cbd5e1",
+          stroke: "#94a3b8",
+          "stroke-width": "0.6"
+        }));
+      }
+    }
+
+    baseLayer.appendChild(svgEl("polygon", {
+      points: pts(footprint.map(([x, y]) => [x, y, 0])),
+      fill: "#f1f5f9",
+      stroke: "#94a3b8",
+      "stroke-width": "1.2"
+    }));
+
+    for (let gx = 35; gx < 420; gx += 35) {
+      const maxY = gx > 310 ? 250 : 305;
+      baseLayer.appendChild(svgEl("polyline", {
+        points: pts([[gx, 0, 0.1], [gx, maxY, 0.1]]),
+        stroke: "#e2e8f0",
+        "stroke-width": "0.7"
+      }));
+    }
+    for (let gy = 35; gy < 305; gy += 35) {
+      const maxX = gy > 250 ? 310 : 420;
+      baseLayer.appendChild(svgEl("polyline", {
+        points: pts([[0, gy, 0.1], [maxX, gy, 0.1]]),
+        stroke: "#e2e8f0",
+        "stroke-width": "0.7"
+      }));
+    }
+
+    baseLayer.appendChild(svgEl("polygon", {
+      points: pts([[0, 0, 0], [420, 0, 0], [420, 0, 56], [0, 0, 56]]),
+      fill: "url(#wallLeftLight)",
+      stroke: "#cbd5e1",
+      "stroke-width": "1"
+    }));
+    baseLayer.appendChild(svgEl("polygon", {
+      points: pts([[0, 0, 0], [0, 305, 0], [0, 305, 56], [0, 0, 56]]),
+      fill: "url(#wallRightShade)",
+      stroke: "#cbd5e1",
+      "stroke-width": "1"
+    }));
+
+    drawPrism(baseLayer, -5, -5, 425, 5, 0, 56, { top: "#f8fafc", left: "#e2e8f0", right: "#cbd5e1" });
+    drawPrism(baseLayer, -5, 0, 5, 305, 0, 56, { top: "#f8fafc", left: "#cbd5e1", right: "#94a3b8" });
+
+    [32, 115, 210, 295].forEach(wx => {
+      baseLayer.appendChild(svgEl("polygon", {
+        points: pts([[wx, 0.3, 14], [wx + 62, 0.3, 14], [wx + 62, 0.3, 46], [wx, 0.3, 46]]),
+        fill: "#bae6fd",
+        "fill-opacity": "0.65",
+        stroke: "#64748b",
+        "stroke-width": "1.6"
+      }));
+      baseLayer.appendChild(svgEl("polyline", {
+        points: pts([[wx + 31, 0.4, 14], [wx + 31, 0.4, 46]]),
+        stroke: "#64748b",
+        "stroke-width": "1.4"
+      }));
+    });
+
+    const zones = [
+      { pts: [[4, 4, 0.3], [148, 4, 0.3], [148, 175, 0.3], [4, 175, 0.3]], fill: "#bbf7d0", stroke: "#4ade80" },
+      { pts: [[4, 178, 0.3], [148, 178, 0.3], [148, 302, 0.3], [4, 302, 0.3]], fill: "#fef08a", stroke: "#facc15" },
+      { pts: [[152, 205, 0.3], [306, 205, 0.3], [306, 336, 0.3], [178, 336, 0.3], [178, 302, 0.3], [152, 302, 0.3]], fill: "#e9d5ff", stroke: "#c084fc" },
+      { pts: [[152, 4, 0.3], [322, 4, 0.3], [322, 202, 0.3], [152, 202, 0.3]], fill: "#f8fafc", stroke: "#cbd5e1" },
+      { pts: [[325, 4, 0.3], [416, 4, 0.3], [416, 88, 0.3], [325, 88, 0.3]], fill: "#fed7aa", stroke: "#fb923c" },
+      { pts: [[325, 92, 0.3], [416, 92, 0.3], [416, 246, 0.3], [325, 246, 0.3]], fill: "#bae6fd", stroke: "#38bdf8" }
+    ];
+
+    zones.forEach(z => {
+      zoneLayer.appendChild(svgEl("polygon", {
+        points: pts(z.pts),
+        fill: z.fill,
+        "fill-opacity": "0.78",
+        stroke: z.stroke,
+        "stroke-width": "1"
+      }));
+    });
+
+    drawStudyTable(furnLayer, 24, 32, 44, 24, { chairsTop: [12, 32], chairsBottom: [12, 32], monitors: [[10, 6], [28, 6]] });
+    drawStudyTable(furnLayer, 86, 32, 44, 24, { chairsTop: [12, 32], chairsBottom: [12, 32], monitors: [[10, 6], [28, 6]] });
+    drawStudyTable(furnLayer, 24, 108, 44, 24, { chairsTop: [12, 32], chairsBottom: [12, 32], monitors: [[10, 6]] });
+    drawStudyTable(furnLayer, 86, 108, 44, 24, { chairsTop: [12, 32], chairsBottom: [12, 32], monitors: [[28, 6]] });
+
+    const cCenter = iso(76, 240, 12);
+    furnLayer.appendChild(svgEl("ellipse", { cx: cCenter.x, cy: cCenter.y + 12, rx: 24, ry: 13, fill: "rgba(15,23,42,0.16)", filter: "url(#contactShadow)" }));
+    furnLayer.appendChild(svgEl("ellipse", { cx: cCenter.x, cy: cCenter.y + 3, rx: 22, ry: 12, fill: "#9c622b" }));
+    furnLayer.appendChild(svgEl("ellipse", { cx: cCenter.x, cy: cCenter.y, rx: 22, ry: 12, fill: "url(#oakTop)", stroke: "#8c5826", "stroke-width": "0.8" }));
+    drawChair(furnLayer, 50, 240, "x+");
+    drawChair(furnLayer, 102, 240, "x-");
+    drawChair(furnLayer, 76, 214, "y+");
+    drawChair(furnLayer, 76, 266, "y-");
+
+    drawStudyTable(furnLayer, 174, 34, 125, 24, { chairsTop: [18, 48, 78, 108], chairsBottom: [18, 48, 78, 108] });
+    drawStudyTable(furnLayer, 174, 96, 125, 24, { chairsTop: [18, 48, 78, 108], chairsBottom: [18, 48, 78, 108] });
+    drawStudyTable(furnLayer, 174, 158, 125, 24, { chairsTop: [18, 48, 78, 108], chairsBottom: [18, 48, 78, 108] });
+
+    drawStudyTable(furnLayer, 342, 34, 56, 24, { chairsTop: [16, 40], chairsBottom: [16, 40] });
+    drawStudyTable(furnLayer, 342, 118, 56, 22, { chairsTop: [16, 40], chairsBottom: [16, 40] });
+    drawStudyTable(furnLayer, 342, 184, 56, 22, { chairsTop: [16, 40], chairsBottom: [16, 40] });
+
+    drawPrism(furnLayer, 185, 232, 46, 16, 0, 18, { top: "#ffffff", left: "#cbd5e1", right: "#94a3b8", stroke: "#64748b", strokeWidth: 0.7 }, true);
+    drawChair(furnLayer, 208, 256, "y-");
+    drawBookshelf(furnLayer, 248, 225, false);
+    drawBookshelf(furnLayer, 276, 225, false);
+
+    const glassWalls = [
+      [[150, 8, 0], [150, 175, 0], [150, 175, 28], [150, 8, 28]],
+      [[323, 92, 0], [323, 245, 0], [323, 245, 28], [323, 92, 28]],
+      [[325, 162, 0], [415, 162, 0], [415, 162, 26], [325, 162, 26]]
+    ];
+    glassWalls.forEach(gw => {
+      partLayer.appendChild(svgEl("polygon", {
+        points: pts(gw),
+        fill: "url(#glassPane)",
+        stroke: "#38bdf8",
+        "stroke-width": "0.9"
+      }));
+    });
+
+    const zoneBadges = [
+      { x: 75,  y: 12,  text: "MEDIA STUDIOS",    bg: "#ffffff", fg: "#166534", border: "#86efac" },
+      { x: 235, y: 12,  text: "GENERAL USE AREA", bg: "#ffffff", fg: "#334155", border: "#cbd5e1" },
+      { x: 76,  y: 294, text: "DESIGNLAB",        bg: "#fef9c3", fg: "#854d0e", border: "#facc15" },
+      { x: 232, y: 318, text: "HELP DESK",        bg: "#f3e8ff", fg: "#6b21a8", border: "#c084fc" },
+      { x: 372, y: 235, text: "GROUP PODS",       bg: "#e0f2fe", fg: "#075985", border: "#38bdf8" }
+    ];
+
+    zoneBadges.forEach(b => {
+      const p = iso(b.x, b.y, 4);
+      const w = b.text.length * 6.4 + 18;
+      const g = svgEl("g", { transform: `translate(${p.x - w / 2}, ${p.y - 10})` });
+      g.appendChild(svgEl("rect", {
+        width: w, height: 20, rx: 10,
+        fill: b.bg, stroke: b.border, "stroke-width": "1",
+        filter: "url(#archShadow)"
+      }));
+      const t = svgEl("text", {
+        x: w / 2, y: 13.5, "text-anchor": "middle",
+        "font-size": "9", "font-weight": "700", "letter-spacing": "0.03em", fill: b.fg
+      });
+      t.textContent = b.text;
+      g.appendChild(t);
+      labelLayer.appendChild(g);
+    });
+  }
+
+  // =========================================================================
+  // 3. SEAT DATA, ZOOM CONTROLS & 1-CLICK RANDOM ALLOCATION
+  // =========================================================================
+  const SEATS_3D = [
+    { code: "31", title: "Table 31 · Seat 31", sub: "(General Use)", zone: "general", zoneName: "General Study Hall", status: "available", x: 192, y: 26 },
+    { code: "32", title: "Table 31 · Seat 32", sub: "(General Use)", zone: "general", zoneName: "General Study Hall", status: "available", x: 222, y: 26 },
+    { code: "33", title: "Table 31 · Seat 33", sub: "(General Use)", zone: "general", zoneName: "General Study Hall", status: "occupied",  x: 252, y: 26 },
+    { code: "34", title: "Table 31 · Seat 34", sub: "(General Use)", zone: "general", zoneName: "General Study Hall", status: "available", x: 282, y: 26 },
+
+    { code: "35", title: "Table 35 · Seat 35", sub: "(General Use)", zone: "general", zoneName: "General Study Hall", status: "available", x: 192, y: 88 },
+    { code: "36", title: "Table 35 · Seat 36", sub: "(General Use)", zone: "general", zoneName: "General Study Hall", status: "reserved",  x: 222, y: 88 },
+    { code: "37", title: "Table 35 · Seat 37", sub: "(General Use)", zone: "general", zoneName: "General Study Hall", status: "available", x: 252, y: 88 },
+    { code: "38", title: "Table 35 · Seat 38", sub: "(General Use)", zone: "general", zoneName: "General Study Hall", status: "occupied",  x: 282, y: 88 },
+
+    { code: "39", title: "Table 39 · Seat 39", sub: "(Window Side)", zone: "general", zoneName: "General Study Hall", status: "available", x: 192, y: 150 },
+    { code: "40", title: "Table 39 · Seat 40", sub: "(Window Side)", zone: "general", zoneName: "General Study Hall", status: "available", x: 222, y: 150 },
+    { code: "41", title: "Table 39 · Seat 41", sub: "(General Use)", zone: "general", zoneName: "General Study Hall", status: "available", x: 252, y: 150 },
+    { code: "42", title: "Table 39 · Seat 42", sub: "(General Use)", zone: "general", zoneName: "General Study Hall", status: "reserved",  x: 282, y: 150 },
+
+    { code: "11", title: "Media Desk 1 · Seat 11", sub: "(Dual Monitor)", zone: "media", zoneName: "Media & Research", status: "available", x: 36,  y: 24 },
+    { code: "12", title: "Media Desk 2 · Seat 12", sub: "(Dual Monitor)", zone: "media", zoneName: "Media & Research", status: "available", x: 98,  y: 24 },
+    { code: "13", title: "Media Desk 3 · Seat 13", sub: "(Editing Bay)",  zone: "media", zoneName: "Media & Research", status: "occupied",  x: 36,  y: 100 },
+    { code: "14", title: "Media Desk 4 · Seat 14", sub: "(Editing Bay)",  zone: "media", zoneName: "Media & Research", status: "available", x: 98,  y: 100 },
+
+    { code: "21", title: "DesignLab · Seat 21", sub: "(Silent Pod)", zone: "designlab", zoneName: "DesignLab / Silent Zone", status: "available", x: 50,  y: 240 },
+    { code: "22", title: "DesignLab · Seat 22", sub: "(Silent Pod)", zone: "designlab", zoneName: "DesignLab / Silent Zone", status: "available", x: 102, y: 240 },
+    { code: "23", title: "DesignLab · Seat 23", sub: "(Silent Pod)", zone: "designlab", zoneName: "DesignLab / Silent Zone", status: "available", x: 76,  y: 266 },
+
+    { code: "51", title: "Group Pod A · Seat 51", sub: "(4-Person Pod)", zone: "group", zoneName: "Group Study Pods", status: "available", x: 358, y: 110 },
+    { code: "52", title: "Group Pod A · Seat 52", sub: "(4-Person Pod)", zone: "group", zoneName: "Group Study Pods", status: "available", x: 382, y: 110 },
+    { code: "53", title: "Group Pod B · Seat 53", sub: "(6-Person Pod)", zone: "group", zoneName: "Group Study Pods", status: "reserved",  x: 358, y: 176 },
+    { code: "54", title: "Group Pod B · Seat 54", sub: "(6-Person Pod)", zone: "group", zoneName: "Group Study Pods", status: "available", x: 382, y: 176 },
+
+    { code: "61", title: "Breakout Room · Seat 61", sub: "(Window Room)", zone: "breakout", zoneName: "Window / Breakout Room", status: "available", x: 358, y: 26 },
+    { code: "62", title: "Breakout Room · Seat 62", sub: "(Window Room)", zone: "breakout", zoneName: "Window / Breakout Room", status: "occupied",  x: 382, y: 26 }
+  ];
+
+  let currentZone = "all";
+  let currentStatusFilter = "all";
+  let currentSelectedCode = "40";
+  let currentZoom = 1.0;
+
+  const MIN_ZOOM = 0.85;
+  const MAX_ZOOM = 1.60;
+
+  const BEACON_PALETTE = {
+    available: { top: "#6ee7b7", body: "#10b981", ring: "#6ee7b7", filter: "url(#glowGreen)" },
+    occupied:  { top: "#cbd5e1", body: "#64748b", ring: "#cbd5e1", filter: "" },
+    reserved:  { top: "#fde68a", body: "#f59e0b", ring: "#fcd34d", filter: "" },
+    selected:  { top: "#93c5fd", body: "#2563eb", ring: "#60a5fa", filter: "url(#glowBlue)" }
+  };
+
+  function applyZoom() {
+    const svg = document.getElementById("iso3dSvg");
+    const label = document.getElementById("zoomPercentLabel");
+    svg.style.transform = `scale(${currentZoom.toFixed(2)})`;
+    label.textContent = `${Math.round(currentZoom * 100)}%`;
+  }
+
+  function adjustZoom(delta) {
+    const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +(currentZoom + delta).toFixed(2)));
+    currentZoom = next;
+    applyZoom();
+  }
+
+  function resetZoom() {
+    currentZoom = 1.0;
+    applyZoom();
+  }
+
+  function getAvailablePool() {
+    const inZone = SEATS_3D.filter(s =>
+      s.status === "available" && (currentZone === "all" || s.zone === currentZone)
+    );
+    return inZone.length > 0 ? inZone : SEATS_3D.filter(s => s.status === "available");
+  }
+
+  function pickRandomAvailableSeat() {
+    const pool = getAvailablePool();
+    if (pool.length === 0) return;
+
+    // Prefer picking a different available seat when multiple exist
+    const candidates = pool.length > 1 ? pool.filter(s => s.code !== currentSelectedCode) : pool;
+    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+
+    currentSelectedCode = chosen.code;
+    document.getElementById("randomSeatHint").textContent = `Picked ${chosen.title} (${chosen.zoneName})`;
+    renderSeatsAndCallout();
+  }
+
+  function renderSeatsAndCallout() {
+    const seatsLayer = document.getElementById("layerSeats");
+    seatsLayer.innerHTML = "";
+
+    let avail = 0, occ = 0, res = 0;
+    SEATS_3D.forEach(s => {
+      if (s.status === "available") avail++;
+      else if (s.status === "occupied") occ++;
+      else if (s.status === "reserved") res++;
+    });
+    document.getElementById("availCount").textContent = avail;
+    document.getElementById("occCount").textContent = occ;
+    document.getElementById("resCount").textContent = res;
+    document.getElementById("randomSeatBtn").disabled = avail === 0;
+
+    const sortedSeats = [...SEATS_3D].sort((a, b) => (a.x + a.y) - (b.x + b.y));
+
+    sortedSeats.forEach(seat => {
+      const isSelected = seat.code === currentSelectedCode;
+      const effectiveState = isSelected ? "selected" : seat.status;
+      const zoneMatch = currentZone === "all" || seat.zone === currentZone;
+      const statusMatch = currentStatusFilter === "all" || effectiveState === currentStatusFilter;
+      const dimmed = !(zoneMatch && statusMatch);
+
+      const style = BEACON_PALETTE[effectiveState] || BEACON_PALETTE.available;
+      const p = iso(seat.x, seat.y, 12);
+
+      const g = svgEl("g", {
+        class: `seat-beacon ${dimmed ? "dimmed" : ""}`,
+        transform: `translate(${p.x}, ${p.y})`
+      });
+
+      g.addEventListener("click", () => chooseSeat(seat.code));
+      g.addEventListener("mouseenter", (e) => showTooltip(e, seat));
+      g.addEventListener("mousemove", (e) => moveTooltip(e));
+      g.addEventListener("mouseleave", hideTooltip);
+
+      const halo = svgEl("ellipse", {
+        cx: 0, cy: 0,
+        rx: isSelected ? 11 : 8,
+        ry: isSelected ? 6.5 : 4.6,
+        fill: style.ring,
+        opacity: "0.7"
+      });
+      if (effectiveState === "available" || isSelected) {
+        halo.setAttribute("class", "beacon-ring-anim");
+      }
+
+      const h = isSelected ? 15 : 10;
+      const body = svgEl("rect", {
+        x: -5, y: -h, width: 10, height: h, rx: 2,
+        fill: style.body
+      });
+      if (style.filter) body.setAttribute("filter", style.filter);
+
+      const cap = svgEl("ellipse", {
+        class: "beacon-cap",
+        cx: 0, cy: -h, rx: 5, ry: 2.9,
+        fill: style.top,
+        stroke: "#ffffff",
+        "stroke-width": isSelected ? "1.1" : "0.6"
+      });
+
+      g.appendChild(halo);
+      g.appendChild(body);
+      g.appendChild(cap);
+      seatsLayer.appendChild(g);
+    });
+
+    updateFloatingCalloutAndInspector();
+  }
+
+  function updateFloatingCalloutAndInspector() {
+    const seat = SEATS_3D.find(s => s.code === currentSelectedCode) || SEATS_3D[0];
+    const calloutLayer = document.getElementById("layerCallout");
+    calloutLayer.innerHTML = "";
+
+    const p = iso(seat.x, seat.y, 28);
+    const cardW = 104;
+    const cardH = 60;
+    const cardX = Math.min(Math.max(p.x - cardW / 2, 16), 795);
+    const cardY = Math.max(p.y - cardH - 16, 12);
+
+    calloutLayer.appendChild(svgEl("line", {
+      x1: p.x, y1: p.y,
+      x2: cardX + cardW / 2, y2: cardY + cardH,
+      stroke: "#2563eb",
+      "stroke-width": "1.4",
+      "stroke-dasharray": "3,2"
+    }));
+
+    const cardG = svgEl("g", { transform: `translate(${cardX}, ${cardY})` });
+    cardG.appendChild(svgEl("rect", {
+      width: cardW, height: cardH, rx: 12,
+      fill: "#ffffff", stroke: "#93c5fd", "stroke-width": "1.5"
+    }));
+
+    const t1 = svgEl("text", { x: cardW / 2, y: 17, "text-anchor": "middle", "font-size": "11", "font-weight": "800", fill: "#0f172a" });
+    t1.textContent = `Seat ${seat.code}`;
+
+    const t2 = svgEl("text", { x: cardW / 2, y: 29, "text-anchor": "middle", "font-size": "8.2", fill: "#64748b" });
+    t2.textContent = seat.sub;
+
+    const t3 = svgEl("text", {
+      x: cardW / 2, y: 42, "text-anchor": "middle", "font-size": "8.5", "font-weight": "700",
+      fill: seat.status === "available" ? "#059669" : "#d97706"
+    });
+    t3.textContent = seat.status.toUpperCase();
+
+    const t4 = svgEl("text", { x: cardW / 2, y: 53, "text-anchor": "middle", "font-size": "8", "font-weight": "600", fill: "#2563eb" });
+    t4.textContent = seat.status === "available" ? "Reserve now" : "Unavailable";
+
+    cardG.appendChild(t1);
+    cardG.appendChild(t2);
+    cardG.appendChild(t3);
+    cardG.appendChild(t4);
+    calloutLayer.appendChild(cardG);
+
+    document.getElementById("inspSeatTitle").textContent = seat.title;
+    document.getElementById("inspZoneSubtitle").textContent = `(${seat.zoneName})`;
+    document.getElementById("inputSeatCode").value = seat.code;
+    document.getElementById("inputZone").value = seat.zone;
+
+    const btn = document.getElementById("confirmPassBtn");
+    btn.disabled = seat.status !== "available";
+    btn.textContent = seat.status === "available"
+      ? "Confirm Reservation & Generate Pass"
+      : `Seat ${seat.code} (${seat.status.toUpperCase()})`;
+  }
+
+  function showTooltip(e, seat) {
+    const tip = document.getElementById("isoTooltip");
+    tip.textContent = `${seat.title} · ${seat.status.toUpperCase()}`;
+    tip.classList.add("visible");
+    moveTooltip(e);
+  }
+
+  function moveTooltip(e) {
+    const viewport = document.getElementById("isoViewport").getBoundingClientRect();
+    const tip = document.getElementById("isoTooltip");
+    tip.style.left = `${e.clientX - viewport.left}px`;
+    tip.style.top = `${e.clientY - viewport.top}px`;
+  }
+
+  function hideTooltip() {
+    document.getElementById("isoTooltip").classList.remove("visible");
+  }
+
+  function chooseSeat(code) {
+    currentSelectedCode = code;
+    renderSeatsAndCallout();
+  }
+
+  function filterZone(zone, btn) {
+    currentZone = zone;
+    document.querySelectorAll(".zone-pill-btn").forEach(el => el.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    renderSeatsAndCallout();
+  }
+
+  function filterByStatus(status, btn) {
+    currentStatusFilter = status;
+    document.querySelectorAll(".status-filter-btn").forEach(el => el.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    renderSeatsAndCallout();
+  }
+
+  function switchMode(mode) {
+    const isGroup = mode === "group";
+    document.getElementById("inputBookingType").value = mode;
+    document.getElementById("modeIndivBtn").classList.toggle("active", !isGroup);
+    document.getElementById("modeGroupBtn").classList.toggle("active", isGroup);
+    document.getElementById("groupInviteField").classList.toggle("d-none", !isGroup);
+  }
+
+  function pickTimelineSlot(el, slotText) {
+    document.querySelectorAll(".time-tick").forEach(t => t.classList.remove("selected-slot"));
+    el.classList.add("selected-slot");
+    document.getElementById("slotDropdown").value = slotText;
+    document.getElementById("topTimeLabel").textContent = slotText;
+  }
+
+  function syncSlotFromSelect(val) {
+    document.getElementById("topTimeLabel").textContent = val;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    buildArchitecture();
+    renderSeatsAndCallout();
+    applyZoom();
+  });
+</script>
 {% endblock %}
